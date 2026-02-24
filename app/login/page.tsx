@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { Session } from '@supabase/supabase-js'
 
 type View = 'login' | 'reset' | 'newpwd'
 
@@ -42,7 +43,8 @@ export default function LoginPage() {
   // On mount: detect recovery link, redirect if already logged in
   useEffect(() => {
     const isRecovery = window.location.hash.includes('type=recovery')
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+      const session = data.session
       if (isRecovery && session) {
         history.replaceState(null, '', window.location.pathname)
         setView('newpwd')
