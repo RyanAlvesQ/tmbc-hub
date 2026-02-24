@@ -1,4 +1,5 @@
 node_modules/
-temporary screenshots/
+.next/
+.env.local
 .DS_Store
 Thumbs.db
