@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  // Following the official Supabase SSR middleware pattern for Edge runtime
+export async function proxy(request: NextRequest) {
+  // Following the official Supabase SSR proxy pattern for Edge runtime
   let supabaseResponse = NextResponse.next({ request })
 
   try {
@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
   } catch {
-    // If middleware fails (e.g. missing env vars), allow the request through
+    // If proxy fails (e.g. missing env vars), allow the request through
     // and let client-side auth handle it
     const isLoginPage = request.nextUrl.pathname === '/login'
     if (!isLoginPage) {
