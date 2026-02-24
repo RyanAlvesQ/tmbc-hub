@@ -126,7 +126,7 @@ function PlayerInner() {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
       window.removeEventListener('pagehide', handleUnload)
       window.removeEventListener('beforeunload', handleUnload)
-      if (ytPlayerRef.current) { ytPlayerRef.current.destroy(); ytPlayerRef.current = null }
+      if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy() } catch (_) {} ytPlayerRef.current = null }
     }
   }, [youtubeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -180,7 +180,10 @@ function PlayerInner() {
                     <div className="loading-spinner" />
                   </div>
                 )}
-                <div id="yt-player" style={{ width: '100%', height: '100%' }} />
+                {/* key=youtubeId forces React to create a fresh DOM node per video.
+                    YouTube IFrame API replaces the div with an iframe, so we must
+                    never reuse a div that has already been used as a player container. */}
+                <div key={youtubeId ?? 'init'} id="yt-player" style={{ width: '100%', height: '100%' }} />
               </div>
 
               {/* Completed banner */}
