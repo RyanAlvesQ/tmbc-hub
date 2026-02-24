@@ -76,11 +76,13 @@ export default function HubPage() {
   const [continueVideos, setContinueVideos] = useState<Array<Video & { pct: number }>>([])
   const [lastVideo, setLastVideo] = useState<Video | null>(null)
   const [heroFaved, setHeroFaved] = useState(false)
+  const [completedMap, setCompletedMap] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const wp = getWP()
     const completed = getCompleted()
     const favs = getFavs()
+    setCompletedMap(completed)
 
     const completedCount = Object.keys(completed).length
     setWatchedCount(completedCount)
@@ -302,8 +304,7 @@ export default function HubPage() {
             </div>
             <div className="cards-scroll">
               {CATALOG.map(v => {
-                const completed = getCompleted()
-                const isDone = v.id in completed
+                const isDone = v.id in completedMap
                 return (
                   <VideoCard
                     key={v.id}

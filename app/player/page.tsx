@@ -128,7 +128,7 @@ function PlayerInner() {
       window.removeEventListener('beforeunload', handleUnload)
       if (ytPlayerRef.current) { ytPlayerRef.current.destroy(); ytPlayerRef.current = null }
     }
-  }, [youtubeId, videoId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [youtubeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleSave = () => {
     const favs = getFavs()
