@@ -30,6 +30,7 @@ function PlayerInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
+  // videoId is an opaque slug (e.g. "v1") — never the YouTube ID
   const videoId = searchParams.get('v') || CATALOG[0].id
   const currentIndex = CATALOG.findIndex(v => v.id === videoId)
   const meta = currentIndex >= 0 ? CATALOG[currentIndex] : CATALOG[0]
@@ -37,6 +38,7 @@ function PlayerInner() {
   const [isSaved, setIsSaved] = useState(false)
   const [showCompletedBanner, setShowCompletedBanner] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [youtubeId, setYoutubeId] = useState<string | null>(null)
 
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -46,7 +48,20 @@ function PlayerInner() {
     setShowCompletedBanner(videoId in getCompleted())
   }, [videoId])
 
+  // Fetch the real YouTube ID server-side — never bundled into the client
   useEffect(() => {
+    setYoutubeId(null)
+    setLoading(true)
+    fetch(`/api/video/${videoId}`)
+      .then(r => r.json())
+      .then(data => { if (data.youtubeId) setYoutubeId(data.youtubeId) })
+      .catch(() => {})
+  }, [videoId])
+
+  // Only initialise the YT player once we have the YouTube ID
+  useEffect(() => {
+    if (!youtubeId) return
+
     const savedWP = getWP()[videoId]
     const startSeconds = savedWP ? Math.floor(savedWP.currentTime) : 0
 
@@ -68,7 +83,7 @@ function PlayerInner() {
 
     window.onYouTubeIframeAPIReady = () => {
       ytPlayerRef.current = new window.YT.Player('yt-player', {
-        videoId,
+        videoId: youtubeId,
         playerVars: { autoplay: 1, rel: 0, modestbranding: 1, color: 'white', start: startSeconds },
         events: {
           onReady: () => setLoading(false),
@@ -111,9 +126,9 @@ function PlayerInner() {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
       window.removeEventListener('pagehide', handleUnload)
       window.removeEventListener('beforeunload', handleUnload)
-      if (ytPlayerRef.current) ytPlayerRef.current.destroy()
+      if (ytPlayerRef.current) { ytPlayerRef.current.destroy(); ytPlayerRef.current = null }
     }
-  }, [videoId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [youtubeId, videoId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleSave = () => {
     const favs = getFavs()
@@ -247,7 +262,7 @@ function PlayerInner() {
                 {CATALOG.map((v, i) => {
                   const isActive = v.id === videoId
                   const isDone = !isActive && (v.id in completedData)
-                  const thumb = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`
+                  const thumb = `/api/thumb/${v.id}`
 
                   return (
                     <Link
@@ -266,7 +281,7 @@ function PlayerInner() {
                       </span>
                       <div className="pitem-thumb">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={thumb} alt={v.title} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/100x56/0A1428/00D4C8?text=MBC' }} />
+                        <img src={thumb} alt={v.title} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/100x56/0A1428/7AD1B8?text=MBC' }} />
                         {isActive && <div className="pitem-now"><div className="pitem-now-dot" /></div>}
                         {isDone && (
                           <div style={{ position: 'absolute', inset: 0, background: 'rgba(74,222,128,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

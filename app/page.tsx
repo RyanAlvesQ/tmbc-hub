@@ -27,8 +27,7 @@ interface VideoCardProps {
 }
 
 function VideoCard({ video, badge, progress, wide }: VideoCardProps) {
-  const thumb = `https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`
-  const fallback = `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`
+  const thumb = `/api/thumb/${video.id}`
   return (
     <Link href={`/player?v=${video.id}`} style={{ textDecoration: 'none' }}>
       <div className={`vcard${wide ? ' vcard-wide' : ''}`}>
@@ -36,7 +35,7 @@ function VideoCard({ video, badge, progress, wide }: VideoCardProps) {
           <img
             src={thumb}
             alt={video.title}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback }}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/280x157/0A1428/7AD1B8?text=MBC' }}
           />
           <div className="vcard-overlay">
             <button className="play-btn"><PlayIcon /></button>

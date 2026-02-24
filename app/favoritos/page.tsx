@@ -90,8 +90,7 @@ export default function FavoritosPage() {
           ) : (
             <div className="fav-grid">
               {favVideos.map(v => {
-                const thumb = `https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`
-                const fallback = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`
+                const thumb = `/api/thumb/${v.id}`
                 return (
                   <div key={v.id} className="vcard" style={{ position: 'relative' }}>
                     {/* Remove button */}
@@ -108,7 +107,7 @@ export default function FavoritosPage() {
                     <Link href={`/player?v=${v.id}`} style={{ textDecoration: 'none', display: 'contents' }}>
                       <div className="vcard-thumb">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={thumb} alt={v.title} onError={(e) => { (e.currentTarget as HTMLImageElement).src = fallback }} />
+                        <img src={thumb} alt={v.title} onError={(e) => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/280x157/0A1428/7AD1B8?text=MBC' }} />
                         <div className="vcard-overlay">
                           <button className="play-btn">
                             <svg width="20" height="20" fill="#050810" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z" /></svg>

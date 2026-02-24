@@ -1,8 +1,9 @@
 import type { Video } from '@/types'
 
+// IDs are opaque slugs — YouTube video IDs live only in app/api/video/[slug]/route.ts
 export const CATALOG: Video[] = [
   {
-    id: 'x8_ZM5Ih_mg',
+    id: 'v1',
     title: 'Como criar novos top spenders — toda semana. @oraphaelpaiva',
     cat: 'Meta Ads · Avançado',
     duration: '15:48',
@@ -11,7 +12,7 @@ export const CATALOG: Video[] = [
     level: 'Avançado',
   },
   {
-    id: 'X_Wp8CBMSWQ',
+    id: 'v2',
     title: 'Atualização - 30.01.26',
     cat: 'Meta Ads · Intermediário',
     duration: '8:57',
@@ -20,7 +21,7 @@ export const CATALOG: Video[] = [
     level: 'Intermediário',
   },
   {
-    id: '9aG7QDu8Z6k',
+    id: 'v3',
     title: 'Outros modos e otimização',
     cat: 'Meta Ads · Avançado',
     duration: '7:56',
