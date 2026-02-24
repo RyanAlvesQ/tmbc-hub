@@ -13,7 +13,7 @@ import { getFavs, setFavs, getWP, setWP, getCompleted, markCompleted } from '@/l
 declare global {
   interface Window {
     YT: {
-      Player: new (id: string, opts: Record<string, unknown>) => YTPlayer
+      Player: new (id: string | HTMLElement, opts: Record<string, unknown>) => YTPlayer
       PlayerState: { PLAYING: number; PAUSED: number; ENDED: number }
     }
     onYouTubeIframeAPIReady: () => void
@@ -42,6 +42,9 @@ function PlayerInner() {
 
   const ytPlayerRef = useRef<YTPlayer | null>(null)
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // React owns this outer div; we create an inner div for YouTube so React never
+  // tries to removeChild a node that YouTube already replaced with an iframe.
+  const playerContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setIsSaved(getFavs().includes(videoId))
@@ -60,8 +63,9 @@ function PlayerInner() {
 
   // Only initialise the YT player once we have the YouTube ID
   useEffect(() => {
-    if (!youtubeId) return
+    if (!youtubeId || !playerContainerRef.current) return
 
+    const container = playerContainerRef.current
     const savedWP = getWP()[videoId]
     const startSeconds = savedWP ? Math.floor(savedWP.currentTime) : 0
 
@@ -81,8 +85,14 @@ function PlayerInner() {
       setWP(wp)
     }
 
-    window.onYouTubeIframeAPIReady = () => {
-      ytPlayerRef.current = new window.YT.Player('yt-player', {
+    const initPlayer = () => {
+      // Create a fresh inner div for YouTube — React never manages this node,
+      // so YouTube can replace it with an iframe without breaking reconciliation.
+      container.innerHTML = ''
+      const slot = document.createElement('div')
+      container.appendChild(slot)
+
+      ytPlayerRef.current = new window.YT.Player(slot, {
         videoId: youtubeId,
         playerVars: { autoplay: 1, rel: 0, modestbranding: 1, color: 'white', start: startSeconds },
         events: {
@@ -108,6 +118,8 @@ function PlayerInner() {
       })
     }
 
+    window.onYouTubeIframeAPIReady = initPlayer
+
     const handleUnload = () => saveProgress()
     window.addEventListener('pagehide', handleUnload)
     window.addEventListener('beforeunload', handleUnload)
@@ -119,7 +131,7 @@ function PlayerInner() {
       tag.src = 'https://www.youtube.com/iframe_api'
       document.head.appendChild(tag)
     } else if (window.YT && window.YT.Player) {
-      window.onYouTubeIframeAPIReady()
+      initPlayer()
     }
 
     return () => {
@@ -127,6 +139,7 @@ function PlayerInner() {
       window.removeEventListener('pagehide', handleUnload)
       window.removeEventListener('beforeunload', handleUnload)
       if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy() } catch (_) {} ytPlayerRef.current = null }
+      container.innerHTML = ''
     }
   }, [youtubeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -180,10 +193,9 @@ function PlayerInner() {
                     <div className="loading-spinner" />
                   </div>
                 )}
-                {/* key=youtubeId forces React to create a fresh DOM node per video.
-                    YouTube IFrame API replaces the div with an iframe, so we must
-                    never reuse a div that has already been used as a player container. */}
-                <div key={youtubeId ?? 'init'} id="yt-player" style={{ width: '100%', height: '100%' }} />
+                {/* React owns this container. We inject a fresh inner div for YouTube
+                    so React never tries to removeChild a node YouTube already replaced. */}
+                <div ref={playerContainerRef} style={{ width: '100%', height: '100%' }} />
               </div>
 
               {/* Completed banner */}
