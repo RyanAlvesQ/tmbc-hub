@@ -6,29 +6,10 @@
 ## Imagens de Referência
 - Se uma imagem de referência for fornecida: corresponder layout, espaçamento, tipografia e cores exatamente
 - Se não houver imagem de referência: criar do zero com alto nível de qualidade (ver guardrails abaixo).
-- Tirar screenshot do resultado, comparar com a referência, corrigir diferenças, tirar novo screenshot. Não parar após uma única passagem.
 
 ## Servidor Local
-- **Sempre servir no localhost** – nunca tirar screenshot de uma URL `file:///`.
-- Iniciar o servidor de desenvolvimento: `node serve.mjs` (serve a raiz do projeto em `http://localhost:3000`)
-- `serve.mjs` fica na raiz do projeto. Iniciá-lo em segundo plano antes de tirar qualquer screenshot.
+- **Sempre servir no localhost** – dev server: `npm run dev` → `http://localhost:3000`
 - Se o servidor já estiver rodando, não iniciar uma segunda instância.
-
-## Fluxo de Screenshots
-- O Puppeteer está instalado em `C:/Users/nateh/AppData/Local/Temp/puppeteer-test/`. O Chromium está incluído lá.
-- **Sempre tirar screenshot do localhost:** `node screenshot.mjs http://localhost:3000`
-- Screenshots são salvos automaticamente em `./temporary screenshots/screenshot-N.png` (incremento automático)
-- Sufixo de label opcional: `node screenshot.mjs http://localhost:3000 label` → salva como `screenshot-N-label.png`
-- `screenshot.mjs` fica na raiz do projeto. Usar como está.
-- Após tirar o screenshot, ler o PNG de `./temporary screenshots/` com a ferramenta Read para inspecionar visualmente.
-- Ao comparar, ser específico: "o heading está em 32px mas a referência mostra ~24px", "o gap do card está largo demais", etc.
-- Verificar: espaçamento/padding, tamanho/peso/line-height de fonte, cores (hex exato), alinhamento e estrutura dos componentes.
-
-## Padrões de Saída
-- Um único arquivo `index.html`, com todos os estilos inline, salvo indicação contrária do usuário
-- Tailwind CSS via CDN: `<script src="https://cdn.tailwindcss.com"></script>`
-- Imagens de placeholder: `https://placehold.co/LARGURAxALTURA`
-- Responsivo com abordagem mobile-first
 
 ## Assets de Marca
 - Sempre verificar a pasta `brand_assets/` antes de criar o design. Ela pode conter logos, cores e fontes.
@@ -49,7 +30,6 @@
 ## Regras Rígidas
 - Não adicionar seções, funcionalidades ou conteúdo que não estejam na referência
 - Não "melhorar" um design de referência – reproduzi-lo fielmente
-- Não parar após uma única passagem de screenshot
 - Não usar `transition-all`
 - Não usar azul/índigo padrão do Tailwind como cor primária
 - Sempre testar em localhost e apenas quando eu solicitar, o push será feito no github.
