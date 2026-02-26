@@ -9,6 +9,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) redirect('/login')
 
   // Verifica role admin via service client (bypassa RLS)
+  // IMPORTANTE: redirect() não pode ser chamado dentro de try/catch em Next.js
+  // (o erro especial que ele lança seria capturado pelo catch)
+  let isAdmin = false
   try {
     const admin = createAdminClient()
     const { data: profile } = await admin
@@ -16,12 +19,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       .select('role')
       .eq('id', user.id)
       .single()
-
-    if (profile?.role !== 'admin') redirect('/')
+    isAdmin = profile?.role === 'admin'
   } catch {
-    // Se o schema ainda não foi criado, bloqueia o acesso
-    redirect('/')
+    // Schema não criado ainda ou SERVICE_ROLE_KEY não configurada — nega acesso
+    isAdmin = false
   }
+
+  if (!isAdmin) redirect('/')
 
   return <>{children}</>
 }
