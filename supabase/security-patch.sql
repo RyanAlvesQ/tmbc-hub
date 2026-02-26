@@ -5,16 +5,14 @@
 
 -- -------------------------------------------------------------
 -- 1. REVOGAR acesso público à admin_user_view
---    Por padrão o Postgres concede SELECT em views ao PUBLIC.
---    Como essa view agrega dados de TODOS os usuários, anon e
---    authenticated NÃO devem ter acesso direto — apenas o
---    service_role (backend) deve consultá-la.
+--    O Supabase concede grants via PUBLIC e default privileges, então
+--    precisamos revogar de PUBLIC, anon e authenticated (ALL PRIVILEGES).
 -- -------------------------------------------------------------
-REVOKE SELECT ON public.admin_user_view FROM anon;
-REVOKE SELECT ON public.admin_user_view FROM authenticated;
+REVOKE ALL PRIVILEGES ON public.admin_user_view FROM PUBLIC;
+REVOKE ALL PRIVILEGES ON public.admin_user_view FROM anon;
+REVOKE ALL PRIVILEGES ON public.admin_user_view FROM authenticated;
 
--- Garantir que apenas postgres/service_role têm acesso
--- (owner da view já tem acesso implícito)
+-- Apenas service_role (backend) pode consultar a view
 GRANT SELECT ON public.admin_user_view TO service_role;
 
 -- -------------------------------------------------------------
@@ -53,11 +51,16 @@ WHERE table_name = 'admin_user_view';
 -- Resultado esperado: apenas "postgres" e "service_role"
 
 -- RLS status das tabelas:
-SELECT schemaname, tablename, rowsecurity, forcerlspolicy
-FROM pg_tables
-WHERE schemaname = 'public'
-  AND tablename IN ('profiles', 'products', 'user_products', 'watch_progress');
--- Resultado esperado: rowsecurity = true em todas
+SELECT
+  n.nspname   AS schemaname,
+  c.relname   AS tablename,
+  c.relrowsecurity      AS rowsecurity,
+  c.relforcerowsecurity AS force_rls
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND c.relname IN ('profiles', 'products', 'user_products', 'watch_progress');
+-- Resultado esperado: rowsecurity = true, force_rls = true (exceto products)
 
 -- =============================================================
 -- 5. DESABILITAR SIGNUP ABERTO (fazer no Dashboard, não via SQL)
