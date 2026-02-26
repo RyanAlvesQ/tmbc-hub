@@ -236,6 +236,31 @@ CREATE POLICY "watch_progress: admin read all"
   USING (public.current_user_role() = 'admin');
 
 -- =============================================================
--- Para tornar um usuário admin após criação:
---   UPDATE public.profiles SET role = 'admin' WHERE id = '<user-uuid>';
+-- 7. Revogar acesso público — segurança
+-- =============================================================
+
+-- admin_user_view: somente service_role (backend) pode ler
+REVOKE SELECT ON public.admin_user_view FROM anon;
+REVOKE SELECT ON public.admin_user_view FROM authenticated;
+GRANT  SELECT ON public.admin_user_view TO service_role;
+
+-- Tabelas internas: anon nunca acessa diretamente
+REVOKE SELECT, INSERT, UPDATE, DELETE ON public.profiles       FROM anon;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON public.user_products  FROM anon;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON public.watch_progress FROM anon;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON public.products       FROM anon;
+
+-- FORCE RLS: impede que a role postgres bypasse as políticas
+ALTER TABLE public.profiles       FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.user_products  FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.watch_progress FORCE ROW LEVEL SECURITY;
+
+-- =============================================================
+-- NOTAS PÓS-DEPLOY
+-- =============================================================
+-- 1. Rodar supabase/security-patch.sql se o schema já existia
+-- 2. Em Supabase Dashboard → Authentication → Configuration:
+--    ativar "Disable new user signups" (novos membros só via /admin)
+-- 3. Para tornar um usuário admin:
+--    UPDATE public.profiles SET role = 'admin' WHERE id = '<user-uuid>';
 -- =============================================================
