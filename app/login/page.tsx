@@ -64,7 +64,14 @@ export default function LoginPage() {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     const passOk = password.length >= 6
 
-    if (!emailOk || !passOk) return
+    if (!emailOk) {
+      setLoginAlert('Informe um e-mail válido.')
+      return
+    }
+    if (!passOk) {
+      setLoginAlert('A senha deve ter pelo menos 6 caracteres.')
+      return
+    }
 
     setLoginLoading(true)
     setLoginAlert('')

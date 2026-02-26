@@ -6,17 +6,13 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
 import Topbar from '@/components/Topbar'
-import { CATALOG } from '@/lib/catalog'
+import { CATALOG, PRODUCT_CATALOG } from '@/lib/catalog'
 import { getWP, getCompleted, getFavs, setFavs } from '@/lib/storage'
+import { createClient } from '@/lib/supabase/client'
 import type { Video } from '@/types'
 
 const PlayIcon = () => (
   <svg width="20" height="20" fill="#050810" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z" /></svg>
-)
-const ClockIcon = () => (
-  <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" /><path d="M12 8v4l2 2" strokeLinecap="round" />
-  </svg>
 )
 
 interface VideoCardProps {
@@ -53,7 +49,7 @@ function VideoCard({ video, badge, progress, wide }: VideoCardProps) {
           <div className="vcard-title">{video.title}</div>
           <div className="vcard-meta">
             <span className="vcard-meta-item">
-              <ClockIcon />
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l2 2" strokeLinecap="round" /></svg>
               {progress !== undefined ? `${progress}% assistido` : video.duration}
             </span>
           </div>
@@ -63,14 +59,11 @@ function VideoCard({ video, badge, progress, wide }: VideoCardProps) {
   )
 }
 
-function scrollRow(id: string, dir: number) {
-  const el = document.getElementById(id)
-  if (el) el.scrollBy({ left: dir * 620, behavior: 'smooth' })
-}
 
 export default function HubPage() {
-  const [activeChip, setActiveChip] = useState('Todos')
   const [heroInd, setHeroInd] = useState(0)
+  // null = still loading, string[] = loaded (may be empty)
+  const [accessibleProducts, setAccessibleProducts] = useState<string[] | null>(null)
   const [watchedCount, setWatchedCount] = useState(0)
   const [inProgressCount, setInProgressCount] = useState(0)
   const [continueVideos, setContinueVideos] = useState<Array<Video & { pct: number }>>([])
@@ -109,6 +102,18 @@ export default function HubPage() {
       setLastVideo(vid)
       if (vid) setHeroFaved(favs.includes(vid.id))
     }
+
+    // Fetch which products this user has active access to
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setAccessibleProducts([]); return }
+      const { data } = await supabase
+        .from('user_products')
+        .select('product_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+      setAccessibleProducts((data ?? []).map((r: { product_id: string }) => r.product_id))
+    }).catch(() => setAccessibleProducts([]))
   }, [])
 
   const toggleHeroFav = () => {
@@ -118,18 +123,6 @@ export default function HubPage() {
     if (idx >= 0) favs.splice(idx, 1); else favs.push(lastVideo.id)
     setFavs(favs)
     setHeroFaved(favs.includes(lastVideo.id))
-  }
-
-  const cats = ['Todos', 'Meta Ads', 'Google Ads', 'Analytics & Dados', 'Creative Strategy', 'TikTok Ads', 'E-commerce', 'Funis & CRO']
-  const catColors: Record<string, string> = {
-    'Todos': 'var(--teal)',
-    'Meta Ads': '#47B5FF',
-    'Google Ads': '#F5A623',
-    'Analytics & Dados': '#A78BFA',
-    'Creative Strategy': '#34D399',
-    'TikTok Ads': '#F87171',
-    'E-commerce': '#60A5FA',
-    'Funis & CRO': '#FBBF24',
   }
 
   return (
@@ -261,20 +254,6 @@ export default function HubPage() {
             </div>
           </div>
 
-          {/* Category chips */}
-          <div className="cat-chips">
-            {cats.map(cat => (
-              <div
-                key={cat}
-                className={`cat-chip${activeChip === cat ? ' active' : ''}`}
-                onClick={() => setActiveChip(cat)}
-              >
-                <span className="cat-chip-dot" style={{ background: catColors[cat] }} />
-                {cat}
-              </div>
-            ))}
-          </div>
-
           {/* Continue Watching */}
           {continueVideos.length > 0 && (
             <div className="row-section">
@@ -293,204 +272,150 @@ export default function HubPage() {
             </div>
           )}
 
-          {/* Novos Vídeos */}
-          <div className="row-section" id="section-novos-videos">
+          {/* ── MEUS CURSOS ── */}
+          <div className="row-section">
             <div className="row-header">
               <div className="row-title-wrap">
                 <div className="row-accent" style={{ background: 'linear-gradient(180deg, var(--teal), var(--blue))' }} />
-                <span className="row-title">Novos Vídeos</span>
-                <span className="row-tag" style={{ background: 'rgba(0,212,200,.1)', color: 'var(--teal)', border: '1px solid rgba(0,212,200,.2)' }}>{CATALOG.length} NOVOS</span>
+                <span className="row-title">Meus Cursos</span>
+                <span className="row-tag" style={{ background: 'rgba(0,212,200,.1)', color: 'var(--teal)', border: '1px solid rgba(0,212,200,.2)' }}>3 CURSOS</span>
               </div>
             </div>
-            <div className="cards-scroll">
-              {CATALOG.map(v => {
-                const isDone = v.id in completedMap
-                return (
-                  <VideoCard
-                    key={v.id}
-                    video={v}
-                    wide
-                    badge={isDone
-                      ? <span className="vcard-badge" style={{ background: 'rgba(74,222,128,.15)', border: '1px solid rgba(74,222,128,.3)', color: '#4ADE80', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                          CONCLUÍDO
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 450px))', gap: 16, padding: '0 64px' }}>
+              {PRODUCT_CATALOG.map(product => {
+                const videos = CATALOG.filter(v => v.productId === product.id)
+                const previewVideo = videos[0] ?? null
+                const completedCount = videos.filter(v => v.id in completedMap).length
+                // null = still loading, true/false = determined
+                const isLoading = accessibleProducts === null
+                const hasAccess = isLoading ? null : accessibleProducts.includes(product.id)
+                const locked = hasAccess === false
+
+                const cardInner = (
+                  <div
+                    style={{
+                      borderRadius: 16,
+                      border: locked || isLoading
+                        ? '1px solid rgba(255,255,255,0.06)'
+                        : `1px solid rgba(${product.colorRgb},0.22)`,
+                      background: locked || isLoading
+                        ? 'rgba(255,255,255,0.02)'
+                        : `linear-gradient(145deg, rgba(${product.colorRgb},0.07) 0%, rgba(7,4,11,0.95) 60%)`,
+                      overflow: 'hidden',
+                      cursor: locked ? 'not-allowed' : isLoading ? 'default' : 'pointer',
+                      transition: locked || isLoading ? 'none' : 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: locked || isLoading ? 'none' : `0 4px 32px rgba(${product.colorRgb},0.08)`,
+                      opacity: locked ? 0.75 : isLoading ? 0.45 : 1,
+                    }}
+                    onMouseEnter={e => {
+                      if (locked || isLoading) return
+                      e.currentTarget.style.transform = 'translateY(-4px)'
+                      e.currentTarget.style.boxShadow = `0 16px 48px rgba(${product.colorRgb},0.2)`
+                    }}
+                    onMouseLeave={e => {
+                      if (locked || isLoading) return
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = `0 4px 32px rgba(${product.colorRgb},0.08)`
+                    }}
+                  >
+                    {/* Thumbnail area */}
+                    <div style={{ position: 'relative', width: '100%', paddingBottom: '48%', background: 'rgba(255,255,255,0.03)' }}>
+                      {previewVideo ? (
+                        <img
+                          src={`/api/thumb/${previewVideo.id}`}
+                          alt={product.name}
+                          style={{
+                            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+                            opacity: locked ? 0.15 : isLoading ? 0.2 : 0.7,
+                            filter: locked || isLoading ? 'grayscale(1) blur(2px)' : 'none',
+                          }}
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                        />
+                      ) : null}
+                      {/* Overlay */}
+                      <div style={{ position: 'absolute', inset: 0, background: locked || isLoading ? 'rgba(7,4,11,0.7)' : `linear-gradient(to top, rgba(7,4,11,0.95) 0%, rgba(7,4,11,0.3) 50%, transparent 100%)` }} />
+
+                      {/* LOCKED: padlock centred */}
+                      {locked && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                          <div style={{
+                            width: 48, height: 48, borderRadius: '50%',
+                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.45)" strokeWidth="1.8">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" strokeLinecap="round" />
+                            </svg>
+                          </div>
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.3)', fontFamily: '"Inter", sans-serif', textTransform: 'uppercase' }}>
+                            Sem acesso
+                          </span>
+                        </div>
+                      )}
+
+                      {/* UNLOCKED: accent bar + count badge + play hint */}
+                      {!locked && !isLoading && (
+                        <>
+                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: product.color, opacity: 0.85 }} />
+                          <div style={{
+                            position: 'absolute', top: 12, right: 12,
+                            background: `rgba(${product.colorRgb},0.2)`,
+                            border: `1px solid rgba(${product.colorRgb},0.35)`,
+                            borderRadius: 20, padding: '3px 10px',
+                            fontSize: 10, fontWeight: 700, letterSpacing: '0.07em',
+                            color: product.color, backdropFilter: 'blur(8px)',
+                            fontFamily: '"Inter", sans-serif',
+                          }}>
+                            {videos.length > 0 ? `${videos.length} VÍDEO${videos.length !== 1 ? 'S' : ''}` : 'EM BREVE'}
+                          </div>
+                          {previewVideo && (
+                            <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <div style={{ width: 28, height: 28, borderRadius: '50%', background: product.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="10" height="10" fill="#07040B" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z" /></svg>
+                              </div>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontFamily: '"Inter", sans-serif' }}>{previewVideo.duration}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Card body */}
+                    <div style={{ padding: '14px 16px 16px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: locked || isLoading ? 'rgba(255,255,255,0.2)' : `rgba(${product.colorRgb},0.7)`, textTransform: 'uppercase', marginBottom: 6, fontFamily: '"Inter", sans-serif' }}>
+                        CURSO
+                      </div>
+                      <h3 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, fontFamily: '"Inter Tight", sans-serif', color: locked || isLoading ? 'rgba(255,255,255,0.25)' : product.color, letterSpacing: '-0.02em' }}>
+                        {product.name}
+                      </h3>
+                      <p style={{ margin: '0 0 14px', fontSize: 12, color: locked || isLoading ? 'rgba(240,236,232,0.2)' : 'rgba(240,236,232,0.45)', fontFamily: '"Inter", sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {product.fullName}
+                      </p>
+                      {isLoading ? null : locked ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(255,255,255,0.2)', fontFamily: '"Inter", sans-serif' }}>
+                          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" strokeLinecap="round" /></svg>
+                          Acesso não adquirido
                         </span>
-                      : <span className="vcard-badge badge-new">NOVO</span>
-                    }
-                  />
+                      ) : videos.length > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: 11, color: 'rgba(240,236,232,0.4)', fontFamily: '"Inter", sans-serif' }}>{completedCount}/{videos.length} concluídos</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: product.color, fontFamily: '"Inter", sans-serif', letterSpacing: '0.02em' }}>
+                            Acessar
+                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          </span>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'rgba(240,236,232,0.3)', fontFamily: '"Inter", sans-serif' }}>Conteúdo em breve</span>
+                      )}
+                    </div>
+                  </div>
                 )
+
+                return locked || isLoading
+                  ? <div key={product.id}>{cardInner}</div>
+                  : <Link key={product.id} href={`/curso/${product.id}`} style={{ textDecoration: 'none' }}>{cardInner}</Link>
               })}
-            </div>
-          </div>
-
-          {/* Row 2: Em Alta */}
-          <div className="row-section">
-            <div className="row-header">
-              <div className="row-title-wrap">
-                <div className="row-accent" style={{ background: 'linear-gradient(180deg, var(--orange), #FF6B35)' }} />
-                <span className="row-title">Em Alta na Comunidade</span>
-                <span className="row-tag" style={{ background: 'rgba(245,166,35,.1)', color: 'var(--orange)', border: '1px solid rgba(245,166,35,.2)' }}>🔥 TRENDING</span>
-              </div>
-              <a className="row-see-all" href="#">
-                VER TUDO
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </a>
-            </div>
-            <div className="row-nav-wrap">
-              <button className="scroll-arrow left" onClick={() => scrollRow('row2', -1)}>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
-              <div className="cards-scroll" id="row2">
-                {[
-                  { src: 'https://placehold.co/280x157/0A1428/47B5FF?text=Broad+Targeting', badge: 'EM ALTA', badgeCls: 'badge-hot', cat: 'Meta Ads', title: 'Broad Targeting em 2025: Por que Funciona', duration: '1:05:20', views: '4.2k visualizações' },
-                  { src: 'https://placehold.co/280x157/0D1A0A/34D399?text=VSL+Copywriting', badge: 'NOVO', badgeCls: 'badge-new', cat: 'Creative Strategy', title: 'VSL de Alta Conversão: Script Completo', duration: '2:15:00', views: '3.8k visualizações' },
-                  { src: 'https://placehold.co/280x157/1A1000/F5A623?text=ROAS+Escalada', badge: 'EM ALTA', badgeCls: 'badge-hot', cat: 'Meta Ads · E-commerce', title: 'Escalando ROAS sem Perder Eficiência', duration: '1:44:35', views: '6.1k visualizações' },
-                  { src: 'https://placehold.co/280x157/120D1E/A78BFA?text=TikTok+Ads', badge: null, badgeCls: '', cat: 'TikTok Ads', title: 'TikTok Spark Ads: Estratégia Completa', duration: '0:52:10', views: '2.9k visualizações' },
-                  { src: 'https://placehold.co/280x157/0A1A18/00D4C8?text=Lookalike+2025', badge: 'EXCLUSIVO', badgeCls: 'badge-excl', cat: 'Meta Ads · Avançado', title: 'Lookalikes em 2025: Ainda Valem a Pena?', duration: '1:18:45', views: '5.4k visualizações' },
-                ].map((c, i) => (
-                  <div className="vcard" key={i}>
-                    <div className="vcard-thumb">
-                      <img src={c.src} alt="" />
-                      <div className="vcard-overlay"><button className="play-btn"><PlayIcon /></button></div>
-                      {c.badge && <span className={`vcard-badge ${c.badgeCls}`}>{c.badge}</span>}
-                      <span className="vcard-duration">{c.duration}</span>
-                    </div>
-                    <div className="vcard-body">
-                      <div className="vcard-cat">{c.cat}</div>
-                      <div className="vcard-title">{c.title}</div>
-                      <div className="vcard-meta">
-                        <span className="vcard-meta-item">
-                          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                          {c.views}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button className="scroll-arrow right" onClick={() => scrollRow('row2', 1)}>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Row 3: Ao Vivo */}
-          <div className="row-section">
-            <div className="row-header">
-              <div className="row-title-wrap">
-                <div className="row-accent" style={{ background: 'linear-gradient(180deg, #F87171, #DC2626)' }} />
-                <span className="row-title">Ao Vivo & Gravações Recentes</span>
-                <span className="row-tag badge-live" style={{ border: '1px solid rgba(248,113,113,.3)' }}>
-                  <span className="badge-live-dot" style={{ background: '#F87171' }} />
-                  AO VIVO AGORA
-                </span>
-              </div>
-              <a className="row-see-all" href="#">VER TUDO <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg></a>
-            </div>
-            <div className="cards-scroll" id="row3">
-              <div className="featured-card">
-                <div className="vcard-thumb">
-                  <img src="https://placehold.co/480x206/0A1428/47B5FF?text=Q%26A+Ao+Vivo+Agora" alt="Live" style={{ filter: 'saturate(.7)' }} />
-                  <div className="vcard-overlay" style={{ opacity: 1, background: 'linear-gradient(180deg, transparent 20%, rgba(7,9,15,.75) 100%)' }} />
-                  <span className="vcard-badge badge-live" style={{ display: 'flex', border: '1px solid rgba(248,113,113,.3)' }}>
-                    <span className="badge-live-dot" style={{ background: '#F87171' }} />
-                    AO VIVO · 312 ASSISTINDO
-                  </span>
-                  <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, zIndex: 5 }}>
-                    <div style={{ fontFamily: "'Roboto Mono',monospace", fontSize: 9, letterSpacing: '.12em', color: 'rgba(248,113,113,.9)', marginBottom: 6 }}>SESSÃO DE PERGUNTAS</div>
-                    <div style={{ fontFamily: "'Montserrat',sans-serif", fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 12 }}>Q&A: Estratégias de Escala para Q3 2025</div>
-                    <button className="btn-primary" style={{ padding: '10px 20px', fontSize: 11 }}>
-                      <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M10 8l6 4-6 4V8z" fill="#050810" /></svg>
-                      ENTRAR NA TRANSMISSÃO
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {[
-                { src: 'https://placehold.co/280x157/0A1428/47B5FF?text=Gravação+Semana+Passada', cat: 'Live Semanal · 14 Fev', title: 'Análise de Contas ao Vivo: Onde estão os Vazamentos', duration: '1:32:00', views: '1.7k views' },
-                { src: 'https://placehold.co/280x157/0D1A0A/34D399?text=Workshop+Copy', cat: 'Workshop · 7 Fev', title: 'Workshop de Copywriting para Anúncios de Produto', duration: '2:05:00', views: '2.3k views' },
-              ].map((c, i) => (
-                <div className="vcard" key={i}>
-                  <div className="vcard-thumb">
-                    <img src={c.src} alt="" />
-                    <div className="vcard-overlay"><button className="play-btn"><PlayIcon /></button></div>
-                    <span className="vcard-badge" style={{ background: 'rgba(100,100,100,.5)', color: 'rgba(255,255,255,.7)', fontFamily: "'Roboto Mono',monospace", fontSize: 8, letterSpacing: '.1em' }}>GRAVADO</span>
-                    <span className="vcard-duration">{c.duration}</span>
-                  </div>
-                  <div className="vcard-body">
-                    <div className="vcard-cat">{c.cat}</div>
-                    <div className="vcard-title">{c.title}</div>
-                    <div className="vcard-meta">
-                      <span className="vcard-meta-item">
-                        <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                        {c.views}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Instructor Strip */}
-          <div className="instructor-strip">
-            <img className="instructor-avatar" src="https://placehold.co/72x72/001E4D/47B5FF?text=MBC" alt="Instrutor" />
-            <div className="instructor-info">
-              <div className="instructor-name">Rafael Mendes</div>
-              <div className="instructor-role">LEAD INSTRUCTOR · MEDIA BUYER CLUB</div>
-              <div className="instructor-desc">Mais de 10 anos escalando campanhas de mídia paga para marcas de 8 dígitos. Gerenciou mais de R$50M em budget de ads nos últimos 3 anos.</div>
-            </div>
-            <div className="instructor-stats">
-              <div className="inst-stat"><span className="inst-stat-val">142</span><span className="inst-stat-lbl">AULAS</span></div>
-              <div className="inst-stat"><span className="inst-stat-val">8.4k</span><span className="inst-stat-lbl">ALUNOS</span></div>
-              <div className="inst-stat"><span className="inst-stat-val">4.9</span><span className="inst-stat-lbl">AVALIAÇÃO</span></div>
-            </div>
-          </div>
-
-          {/* Row 4: Meta Ads Mastery */}
-          <div className="row-section">
-            <div className="row-header">
-              <div className="row-title-wrap">
-                <div className="row-accent" style={{ background: 'linear-gradient(180deg, #47B5FF, #004098)' }} />
-                <span className="row-title">Meta Ads Mastery</span>
-              </div>
-              <a className="row-see-all" href="#">VER TUDO <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg></a>
-            </div>
-            <div className="row-nav-wrap">
-              <button className="scroll-arrow left" onClick={() => scrollRow('row4', -1)}>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
-              <div className="cards-scroll" id="row4">
-                {[
-                  { src: 'https://placehold.co/280x157/08101E/47B5FF?text=Advantage++', badge: 'NOVO', badgeCls: 'badge-new', cat: 'Meta Ads · Intermediário', title: 'Advantage++ Shopping: Tudo que Você Precisa Saber', duration: '0:48:30' },
-                  { src: 'https://placehold.co/280x157/0A1428/6B9EFF?text=CBO+vs+ABO', badge: null, badgeCls: '', cat: 'Meta Ads · Iniciante', title: 'CBO vs ABO: Qual Usar e Quando Mudar', duration: '1:12:00' },
-                  { src: 'https://placehold.co/280x157/071428/3B82F6?text=Pixel+Avan%C3%A7ado', badge: 'EXCLUSIVO', badgeCls: 'badge-excl', cat: 'Meta Ads · Avançado', title: 'Pixel Meta Avançado: Eventos Customizados & CAPI', duration: '1:55:15' },
-                  { src: 'https://placehold.co/280x157/091426/2563EB?text=Retargeting', badge: null, badgeCls: '', cat: 'Meta Ads · Intermediário', title: 'Retargeting Inteligente: Segmentação por Comportamento', duration: '0:36:40' },
-                  { src: 'https://placehold.co/280x157/080E1E/60A5FA?text=DPA+Catalogo', badge: 'EM ALTA', badgeCls: 'badge-hot', cat: 'Meta Ads · E-commerce', title: 'DPA & Catálogo: Otimização para E-commerce', duration: '1:08:20' },
-                ].map((c, i) => (
-                  <div className="vcard" key={i}>
-                    <div className="vcard-thumb">
-                      <img src={c.src} alt="" />
-                      <div className="vcard-overlay"><button className="play-btn"><PlayIcon /></button></div>
-                      {c.badge && <span className={`vcard-badge ${c.badgeCls}`}>{c.badge}</span>}
-                      <span className="vcard-duration">{c.duration}</span>
-                    </div>
-                    <div className="vcard-body">
-                      <div className="vcard-cat">{c.cat}</div>
-                      <div className="vcard-title">{c.title}</div>
-                      <div className="vcard-meta">
-                        <span className="vcard-meta-item">
-                          <ClockIcon />
-                          {c.duration}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button className="scroll-arrow right" onClick={() => scrollRow('row4', 1)}>
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
             </div>
           </div>
 

@@ -61,6 +61,26 @@ function PlayerInner() {
       .catch(() => {})
   }, [videoId])
 
+  // Sincroniza progresso do DB para localStorage ao trocar de vídeo
+  useEffect(() => {
+    fetch(`/api/progress?video=${videoId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data?.progress) return
+        const { current_time, duration, progress } = data.progress
+        if (current_time > 0) {
+          const wp = getWP()
+          // Só sobrescreve se o DB tiver posição mais avançada
+          const local = wp[videoId]
+          if (!local || current_time > local.currentTime) {
+            wp[videoId] = { currentTime: current_time, duration, progress, lastWatched: Date.now() }
+            setWP(wp)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [videoId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Only initialise the YT player once we have the YouTube ID
   useEffect(() => {
     if (!youtubeId || !playerContainerRef.current) return
@@ -69,20 +89,30 @@ function PlayerInner() {
     const savedWP = getWP()[videoId]
     const startSeconds = savedWP ? Math.floor(savedWP.currentTime) : 0
 
-    const saveProgress = () => {
+    const saveProgress = (forceComplete = false) => {
       const player = ytPlayerRef.current
       if (!player || typeof player.getCurrentTime !== 'function') return
       const currentTime = player.getCurrentTime()
       const duration = player.getDuration()
       if (!duration || currentTime < 30) return
       const progress = currentTime / duration
+      const isCompleted = forceComplete || progress >= 0.95
+
+      // Salva no localStorage (fallback offline)
       const wp = getWP()
-      if (progress >= 0.95) {
+      if (isCompleted) {
         delete wp[videoId]
       } else {
         wp[videoId] = { currentTime, duration, progress, lastWatched: Date.now() }
       }
       setWP(wp)
+
+      // Salva no DB (fire-and-forget — não bloqueia o player)
+      fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: videoId, current_time: currentTime, duration, progress, is_completed: isCompleted }),
+      }).catch(() => {})
     }
 
     const initPlayer = () => {
@@ -107,9 +137,7 @@ function PlayerInner() {
             } else if (e.data === window.YT.PlayerState.ENDED) {
               if (progressIntervalRef.current) clearInterval(progressIntervalRef.current)
               progressIntervalRef.current = null
-              const wp = getWP()
-              delete wp[videoId]
-              setWP(wp)
+              saveProgress(true)
               markCompleted(videoId)
               setShowCompletedBanner(true)
             }

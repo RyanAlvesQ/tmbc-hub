@@ -2,9 +2,25 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      if (data?.role === 'admin') setIsAdmin(true)
+    }).catch(() => {})
+  }, [])
 
   return (
     <aside className="sidebar">
@@ -35,6 +51,19 @@ export default function Sidebar() {
           </span>
           <span className="nav-label">FAVORITOS</span>
         </Link>
+
+        {isAdmin && (
+          <Link className={`nav-item${pathname === '/admin' ? ' active' : ''}`} href="/admin">
+            <span className="nav-icon">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="nav-label">ADMIN</span>
+          </Link>
+        )}
       </nav>
 
       <div className="sidebar-bottom">
