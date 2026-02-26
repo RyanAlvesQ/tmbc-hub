@@ -407,7 +407,11 @@ function EditModal({ user, onClose, onSaved, onProductChanged }: { user: AdminUs
           {error && <p style={{ color: '#ff6b6b', fontSize: 13, margin: 0 }}>{error}</p>}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-            {!confirmDelete ? (
+            {user.role === 'admin' ? (
+              <span style={{ fontSize: 11, color: '#555', fontFamily: '"Inter", sans-serif' }}>
+                Administradores não podem ser excluídos
+              </span>
+            ) : !confirmDelete ? (
               <button onClick={() => setConfirmDelete(true)} style={deleteBtnStyle}>
                 Excluir Usuário
               </button>

@@ -102,6 +102,18 @@ export async function DELETE(
   }
 
   const admin = createAdminClient()
+
+  // Impede exclusão de outro admin
+  const { data: targetProfile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', id)
+    .single()
+
+  if (targetProfile?.role === 'admin') {
+    return NextResponse.json({ error: 'Não é possível excluir outro administrador' }, { status: 403 })
+  }
+
   const { error } = await admin.auth.admin.deleteUser(id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
