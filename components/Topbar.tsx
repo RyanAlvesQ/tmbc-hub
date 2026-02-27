@@ -190,14 +190,8 @@ export default function Topbar({ alwaysScrolled = false }: TopbarProps) {
           </div>
         </div>
 
-        <div className="search-wrap">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-          </svg>
-          <input className="search-input" type="text" placeholder="Buscar aulas, tópicos..." />
-        </div>
 
-        <div className="topbar-right">
+<div className="topbar-right">
           <div
             ref={notifBellRef}
             className="icon-btn notif-btn"

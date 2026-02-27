@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { CATALOG } from '@/lib/catalog'
+
+const VALID_VIDEO_IDS = new Set(CATALOG.map((v) => v.id))
 
 // GET /api/progress?video=v1
 // Retorna o progresso do usuário autenticado para o vídeo especificado
@@ -8,8 +11,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const videoId = searchParams.get('video')
 
-  if (!videoId) {
-    return NextResponse.json({ error: 'video param required' }, { status: 400 })
+  if (!videoId || !VALID_VIDEO_IDS.has(videoId)) {
+    return NextResponse.json({ error: 'Parâmetro video inválido.' }, { status: 400 })
   }
 
   const cookieStore = await cookies()
@@ -37,7 +40,8 @@ export async function GET(request: Request) {
     .maybeSingle()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('watch_progress GET error:', error.message)
+    return NextResponse.json({ error: 'Erro ao buscar progresso.' }, { status: 500 })
   }
 
   // Normaliza o campo para o player: expõe como current_time no response JSON
@@ -55,8 +59,21 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { video_id, current_time, duration, progress, is_completed } = body
 
-  if (!video_id || current_time == null || duration == null || progress == null) {
-    return NextResponse.json({ error: 'Campos obrigatórios ausentes' }, { status: 400 })
+  // Validação de inputs
+  if (!video_id || !VALID_VIDEO_IDS.has(video_id)) {
+    return NextResponse.json({ error: 'video_id inválido.' }, { status: 400 })
+  }
+  if (typeof current_time !== 'number' || current_time < 0 || !isFinite(current_time)) {
+    return NextResponse.json({ error: 'current_time inválido.' }, { status: 400 })
+  }
+  if (typeof duration !== 'number' || duration < 0 || !isFinite(duration)) {
+    return NextResponse.json({ error: 'duration inválido.' }, { status: 400 })
+  }
+  if (typeof progress !== 'number' || progress < 0 || progress > 1 || !isFinite(progress)) {
+    return NextResponse.json({ error: 'progress deve estar entre 0 e 1.' }, { status: 400 })
+  }
+  if (is_completed !== undefined && typeof is_completed !== 'boolean') {
+    return NextResponse.json({ error: 'is_completed deve ser boolean.' }, { status: 400 })
   }
 
   const cookieStore = await cookies()
@@ -92,7 +109,7 @@ export async function POST(request: Request) {
   const upsertData: Record<string, unknown> = {
     user_id: user.id,
     video_id,
-    playback_position: current_time,  // coluna no DB é playback_position
+    playback_position: current_time,
     duration,
     progress,
     is_completed: is_completed ?? false,
@@ -110,7 +127,8 @@ export async function POST(request: Request) {
     .upsert(upsertData, { onConflict: 'user_id,video_id' })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('watch_progress POST error:', error.message)
+    return NextResponse.json({ error: 'Erro ao salvar progresso.' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })

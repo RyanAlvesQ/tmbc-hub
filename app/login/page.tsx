@@ -42,17 +42,25 @@ export default function LoginPage() {
 
   // On mount: detect recovery link, redirect if already logged in
   useEffect(() => {
-    const isRecovery = window.location.hash.includes('type=recovery')
-    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
-      const session = data.session
-      if (isRecovery && session) {
+    // PASSWORD_RECOVERY é o evento correto quando o usuário chega via link do email.
+    // O Supabase JS processa o token do hash de forma assíncrona, então
+    // getSession() sozinho não é suficiente — onAuthStateChange é mais confiável.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
         history.replaceState(null, '', window.location.pathname)
         setView('newpwd')
-        return
       }
-      if (session) router.replace('/')
     })
+
+    // Redireciona usuários já logados, exceto durante fluxo de recovery
+    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+      const isRecovery = window.location.hash.includes('type=recovery')
+      if (data.session && !isRecovery) router.replace('/')
+    })
+
     if (window.location.hash === '#reset') setView('reset')
+
+    return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -94,13 +102,17 @@ export default function LoginPage() {
 
     setResetLoading(true)
     setResetAlert(null)
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/login',
+
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, redirectTo: window.location.origin + '/login' }),
     })
+    const data = await res.json()
     setResetLoading(false)
 
-    if (error) {
-      setResetAlert({ msg: mapError(error.message), type: 'error' })
+    if (!res.ok) {
+      setResetAlert({ msg: data.error ?? 'Erro ao enviar o e-mail. Tente novamente.', type: 'error' })
     } else {
       setResetAlert({ msg: 'Link enviado! Verifique sua caixa de entrada e a pasta de spam.', type: 'success' })
     }
