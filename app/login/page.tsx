@@ -42,9 +42,12 @@ export default function LoginPage() {
 
   // On mount: detect recovery link, redirect if already logged in
   useEffect(() => {
-    // PASSWORD_RECOVERY é o evento correto quando o usuário chega via link do email.
-    // O Supabase JS processa o token do hash de forma assíncrona, então
-    // getSession() sozinho não é suficiente — onAuthStateChange é mais confiável.
+    // Captura o hash de forma síncrona antes de qualquer operação async
+    // (onAuthStateChange pode apagar o hash antes do getSession resolver)
+    const isRecovery = window.location.hash.includes('type=recovery')
+
+    if (window.location.hash === '#reset') setView('reset')
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         history.replaceState(null, '', window.location.pathname)
@@ -52,13 +55,12 @@ export default function LoginPage() {
       }
     })
 
-    // Redireciona usuários já logados, exceto durante fluxo de recovery
-    supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
-      const isRecovery = window.location.hash.includes('type=recovery')
-      if (data.session && !isRecovery) router.replace('/')
-    })
-
-    if (window.location.hash === '#reset') setView('reset')
+    // Só redireciona usuários logados se NÃO for fluxo de recovery
+    if (!isRecovery) {
+      supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
+        if (data.session) router.replace('/')
+      })
+    }
 
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
