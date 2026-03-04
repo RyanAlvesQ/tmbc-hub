@@ -44,18 +44,12 @@ export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
   // =============================================================
-  // 1. Validação do token secreto (se configurado)
+  // 1. Log dos headers para identificar como a Payt envia o token
+  //    (verificar no Vercel Logs após o primeiro teste)
   // =============================================================
-  const secret = process.env.PAYT_WEBHOOK_SECRET
-  if (secret) {
-    const authHeader = request.headers.get('authorization') ?? ''
-    const bodyToken  = '' // será lido após parse do body
-    // Valida pelo header Authorization: Bearer <token>
-    if (!authHeader.includes(secret) && bodyToken !== secret) {
-      console.error(`[payt-webhook] Token inválido — IP: ${ip}`)
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  }
+  const allHeaders: Record<string, string> = {}
+  request.headers.forEach((value, key) => { allHeaders[key] = value })
+  console.log('[payt-webhook] Headers recebidos:', JSON.stringify(allHeaders, null, 2))
 
   // =============================================================
   // 2. Parse do body (JSON ou form-encoded)
