@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkCsrf } from '@/lib/csrf'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -54,6 +55,9 @@ export async function GET() {
 // POST /api/admin/users — cria novo membro
 // Body: { email, password, full_name, role?, products?: string[] }
 export async function POST(request: Request) {
+  const csrfError = checkCsrf(request)
+  if (csrfError) return csrfError
+
   const { user } = await getAdminSupabase()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!(await assertAdmin(user.id))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

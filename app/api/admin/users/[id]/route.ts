@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkCsrf } from '@/lib/csrf'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -60,6 +61,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrfError = checkCsrf(request)
+  if (csrfError) return csrfError
+
   const { id } = await params
   if (!UUID_REGEX.test(id)) return NextResponse.json({ error: 'ID inválido.' }, { status: 400 })
 
@@ -109,9 +113,12 @@ export async function PATCH(
 
 // DELETE /api/admin/users/[id] — remove usuário do auth e todos os dados
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrfError = checkCsrf(req)
+  if (csrfError) return csrfError
+
   const { id } = await params
   if (!UUID_REGEX.test(id)) return NextResponse.json({ error: 'ID inválido.' }, { status: 400 })
 

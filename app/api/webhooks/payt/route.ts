@@ -66,7 +66,9 @@ export async function POST(request: Request) {
   //    A Payt envia no body como "integration_key"
   // =============================================================
   const secret = process.env.PAYT_WEBHOOK_SECRET?.trim()
-  if (secret) {
+  if (!secret) {
+    console.warn('[payt-webhook] PAYT_WEBHOOK_SECRET não configurado — validação de segurança desativada!')
+  } else {
     const receivedKey = (typeof body.integration_key === 'string' ? body.integration_key : '').trim()
     if (receivedKey !== secret) {
       console.error(`[payt-webhook] integration_key inválido — IP: ${ip}`)
@@ -256,7 +258,11 @@ export async function POST(request: Request) {
   // 11. Enviar email de "definir sua senha" via Supabase
   //     O cliente recebe um link que leva ao /login → view newpwd
   // =============================================================
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tmbc-hub.vercel.app'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (!siteUrl) {
+    console.warn('[payt-webhook] NEXT_PUBLIC_SITE_URL não configurado — email de acesso não será enviado')
+    return NextResponse.json({ ok: true })
+  }
 
   try {
     const cookieStore = await cookies()
