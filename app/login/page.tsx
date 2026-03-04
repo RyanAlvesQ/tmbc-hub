@@ -112,7 +112,7 @@ export default function LoginPage() {
     const res = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, redirectTo: window.location.origin + '/login' }),
+      body: JSON.stringify({ email, redirectTo: window.location.origin + '/auth/callback?next=reset' }),
     })
     const data = await res.json()
     setResetLoading(false)

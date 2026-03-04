@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   )
 
-  const destination = redirectTo ?? `${siteUrl}/login`
+  const destination = redirectTo ?? `${siteUrl}/auth/callback?next=reset`
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: destination,
   })
