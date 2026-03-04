@@ -42,21 +42,25 @@ export default function LoginPage() {
 
   // On mount: detect recovery link, redirect if already logged in
   useEffect(() => {
-    // Captura o hash de forma síncrona antes de qualquer operação async
-    // (onAuthStateChange pode apagar o hash antes do getSession resolver)
-    const isRecovery = window.location.hash.includes('type=recovery')
+    const hash = window.location.hash
 
-    if (window.location.hash === '#reset') setView('reset')
+    // Detecta fluxo de recovery antes do Supabase client processar o hash
+    if (hash.includes('type=recovery')) {
+      history.replaceState(null, '', window.location.pathname)
+      setView('newpwd')
+      // Deixa o onAuthStateChange abaixo configurar a sessão
+    } else if (hash === '#reset') {
+      setView('reset')
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        history.replaceState(null, '', window.location.pathname)
         setView('newpwd')
       }
     })
 
-    // Só redireciona usuários logados se NÃO for fluxo de recovery
-    if (!isRecovery) {
+    // Só redireciona usuários já logados fora do fluxo de recovery
+    if (!hash.includes('type=recovery')) {
       supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
         if (data.session) router.replace('/')
       })
