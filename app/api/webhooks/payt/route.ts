@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
 
 // =============================================================
 // Mapeamento: ID da oferta na Payt → produto da plataforma
@@ -254,9 +253,11 @@ export async function POST(request: Request) {
   console.log(`[payt-webhook] Acesso concedido: ${email} → ${productId}`)
 
   // =============================================================
-  // 11. Enviar email de "definir sua senha" via Supabase
-  //     Usa flowType:'implicit' para evitar PKCE — o link do email
-  //     precisa funcionar em qualquer browser, sem code_verifier.
+  // 11. Enviar email de "definir sua senha" via Supabase REST API
+  //     Chamada direta ao endpoint /auth/v1/recover SEM code_challenge
+  //     → Supabase envia link OTP (hash tokens) em vez de PKCE (?code=)
+  //     O link PKCE exige code_verifier no browser do comprador (impossível
+  //     quando o email é enviado pelo servidor do webhook).
   // =============================================================
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   if (!siteUrl) {
@@ -265,23 +266,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    // flowType:'implicit' → link do email usa hash tokens (#access_token=...&type=recovery)
-    // em vez de PKCE (?code=...) — funciona sem code_verifier no browser do comprador
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    const redirectTo = `${siteUrl}/auth/callback?next=reset`
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,
       {
-        auth: { flowType: 'implicit' },
-        cookies: { getAll: () => [], setAll: () => {} },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        },
+        body: JSON.stringify({ email }),
       }
     )
 
-    const { error: emailError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/callback?next=reset`,
-    })
-
-    if (emailError) {
-      console.error(`[payt-webhook] Erro ao enviar email para ${email}:`, emailError.message)
+    if (!res.ok) {
+      const body = await res.text()
+      console.error(`[payt-webhook] Erro ao enviar email (${res.status}): ${body}`)
     } else {
       console.log(`[payt-webhook] Email de acesso enviado para ${email}`)
     }

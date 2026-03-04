@@ -15,14 +15,13 @@ function CallbackHandler() {
     const code  = searchParams.get('code')
     const next  = searchParams.get('next') ?? '/'
     const error = searchParams.get('error')
-    const hash  = window.location.hash
 
     if (error) {
       router.replace('/login?error=link_invalido')
       return
     }
 
-    // PKCE flow: troca o code no browser (code_verifier existe no browser)
+    // PKCE flow: vem do "Esqueci minha senha" no login (browser gerou code_verifier)
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error: err }) => {
         if (err) {
@@ -35,44 +34,30 @@ function CallbackHandler() {
       return
     }
 
-    // Hash/implicit flow: tokens no fragmento #access_token=...&type=recovery
-    // O Supabase client (createClient acima) já lê o hash e processa os tokens.
-    // onAuthStateChange dispara INITIAL_SESSION, SIGNED_IN ou PASSWORD_RECOVERY.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const isRecovery = hash.includes('type=recovery') || event === 'PASSWORD_RECOVERY'
-      const hasSession = !!session
+    // OTP/implicit flow: vem do webhook de compra (hash tokens no URL)
+    // Ex: #access_token=xxx&refresh_token=xxx&type=recovery
+    const hash = window.location.hash.substring(1) // remove o #
+    const params = new URLSearchParams(hash)
+    const accessToken  = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    const type         = params.get('type')
 
-      if (event === 'PASSWORD_RECOVERY') {
-        subscription.unsubscribe()
-        router.replace('/reset-password')
-        return
-      }
-
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && hasSession) {
-        subscription.unsubscribe()
-        router.replace(isRecovery || next === 'reset' ? '/reset-password' : next)
-        return
-      }
-
-      // Sem sessão no INITIAL_SESSION — aguarda próximo evento ou timeout
-    })
-
-    const timeout = setTimeout(() => {
-      subscription.unsubscribe()
-      // Último recurso: verifica se há sessão mesmo sem evento ter disparado
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          router.replace(hash.includes('type=recovery') || next === 'reset' ? '/reset-password' : next)
-        } else {
-          router.replace('/login?error=link_invalido')
-        }
-      })
-    }, 3000)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timeout)
+    if (accessToken && refreshToken) {
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error: err }) => {
+          if (err) {
+            console.error('[auth/callback] setSession:', err.message)
+            router.replace('/login?error=link_invalido')
+          } else {
+            const isRecovery = type === 'recovery' || next === 'reset'
+            router.replace(isRecovery ? '/reset-password' : next)
+          }
+        })
+      return
     }
+
+    // Sem code nem hash tokens — link inválido
+    router.replace('/login?error=link_invalido')
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null
