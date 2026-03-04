@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createServerClient } from '@supabase/ssr'
 
 // =============================================================
 // Mapeamento: ID da oferta na Payt → produto da plataforma
@@ -254,34 +255,39 @@ export async function POST(request: Request) {
 
   // =============================================================
   // 11. Enviar email de "definir sua senha" via Supabase
-  //     TODO: reativar após finalizar o hub
+  //     Usa flowType:'implicit' para evitar PKCE — o link do email
+  //     precisa funcionar em qualquer browser, sem code_verifier.
   // =============================================================
-  // const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  // if (!siteUrl) {
-  //   console.warn('[payt-webhook] NEXT_PUBLIC_SITE_URL não configurado — email de acesso não será enviado')
-  //   return NextResponse.json({ ok: true })
-  // }
-  //
-  // try {
-  //   const cookieStore = await cookies()
-  //   const supabase = createServerClient(
-  //     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  //     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  //     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  //   )
-  //
-  //   const { error: emailError } = await supabase.auth.resetPasswordForEmail(email, {
-  //     redirectTo: `${siteUrl}/auth/callback?next=reset`,
-  //   })
-  //
-  //   if (emailError) {
-  //     console.error(`[payt-webhook] Erro ao enviar email para ${email}:`, emailError.message)
-  //   } else {
-  //     console.log(`[payt-webhook] Email de acesso enviado para ${email}`)
-  //   }
-  // } catch (e) {
-  //   console.error(`[payt-webhook] Exceção ao enviar email:`, e)
-  // }
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  if (!siteUrl) {
+    console.warn('[payt-webhook] NEXT_PUBLIC_SITE_URL não configurado — email de acesso não será enviado')
+    return NextResponse.json({ ok: true })
+  }
+
+  try {
+    // flowType:'implicit' → link do email usa hash tokens (#access_token=...&type=recovery)
+    // em vez de PKCE (?code=...) — funciona sem code_verifier no browser do comprador
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: { flowType: 'implicit' },
+        cookies: { getAll: () => [], setAll: () => {} },
+      }
+    )
+
+    const { error: emailError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/auth/callback?next=reset`,
+    })
+
+    if (emailError) {
+      console.error(`[payt-webhook] Erro ao enviar email para ${email}:`, emailError.message)
+    } else {
+      console.log(`[payt-webhook] Email de acesso enviado para ${email}`)
+    }
+  } catch (e) {
+    console.error(`[payt-webhook] Exceção ao enviar email:`, e)
+  }
 
   return NextResponse.json({ ok: true })
 }
