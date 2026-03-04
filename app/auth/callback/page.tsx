@@ -15,13 +15,14 @@ function CallbackHandler() {
     const code  = searchParams.get('code')
     const next  = searchParams.get('next') ?? '/'
     const error = searchParams.get('error')
+    const hash  = window.location.hash
 
     if (error) {
       router.replace('/login?error=link_invalido')
       return
     }
 
-    // PKCE flow: troca o code por sessão no browser (onde o code_verifier existe)
+    // PKCE flow: troca o code no browser (code_verifier existe no browser)
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error: err }) => {
         if (err) {
@@ -34,21 +35,39 @@ function CallbackHandler() {
       return
     }
 
-    // Hash/implicit flow: aguarda o evento do Supabase client
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    // Hash/implicit flow: tokens no fragmento #access_token=...&type=recovery
+    // O Supabase client (createClient acima) já lê o hash e processa os tokens.
+    // onAuthStateChange dispara INITIAL_SESSION, SIGNED_IN ou PASSWORD_RECOVERY.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const isRecovery = hash.includes('type=recovery') || event === 'PASSWORD_RECOVERY'
+      const hasSession = !!session
+
       if (event === 'PASSWORD_RECOVERY') {
         subscription.unsubscribe()
         router.replace('/reset-password')
-      } else if (event === 'SIGNED_IN') {
-        subscription.unsubscribe()
-        router.replace(next === 'reset' ? '/reset-password' : next)
+        return
       }
+
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && hasSession) {
+        subscription.unsubscribe()
+        router.replace(isRecovery || next === 'reset' ? '/reset-password' : next)
+        return
+      }
+
+      // Sem sessão no INITIAL_SESSION — aguarda próximo evento ou timeout
     })
 
     const timeout = setTimeout(() => {
       subscription.unsubscribe()
-      router.replace('/login?error=link_invalido')
-    }, 5000)
+      // Último recurso: verifica se há sessão mesmo sem evento ter disparado
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          router.replace(hash.includes('type=recovery') || next === 'reset' ? '/reset-password' : next)
+        } else {
+          router.replace('/login?error=link_invalido')
+        }
+      })
+    }, 3000)
 
     return () => {
       subscription.unsubscribe()
