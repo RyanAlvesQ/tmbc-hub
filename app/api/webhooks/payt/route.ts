@@ -44,15 +44,7 @@ export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
   // =============================================================
-  // 1. Log dos headers para identificar como a Payt envia o token
-  //    (verificar no Vercel Logs após o primeiro teste)
-  // =============================================================
-  const allHeaders: Record<string, string> = {}
-  request.headers.forEach((value, key) => { allHeaders[key] = value })
-  console.log('[payt-webhook] Headers recebidos:', JSON.stringify(allHeaders, null, 2))
-
-  // =============================================================
-  // 2. Parse do body (JSON ou form-encoded)
+  // 1. Parse do body (JSON ou form-encoded)
   // =============================================================
   const contentType = request.headers.get('content-type') ?? ''
   let body: Record<string, unknown> = {}
@@ -61,28 +53,42 @@ export async function POST(request: Request) {
     if (contentType.includes('application/json')) {
       body = await request.json()
     } else {
-      // form-encoded (application/x-www-form-urlencoded)
       const text = await request.text()
       body = Object.fromEntries(new URLSearchParams(text))
     }
   } catch (e) {
     console.error('[payt-webhook] Erro ao parsear body:', e)
-    return NextResponse.json({ ok: true }) // Retorna 200 para evitar re-tentativas
+    return NextResponse.json({ ok: true })
   }
 
   // =============================================================
-  // 3. Log do payload completo (para debug — ver em Vercel Logs)
+  // 2. Validar integration_key (Chave Única do postback na Payt)
+  //    A Payt envia no body como "integration_key"
   // =============================================================
-  console.log('[payt-webhook] Payload recebido:', JSON.stringify(body, null, 2))
+  const secret = process.env.PAYT_WEBHOOK_SECRET
+  if (secret) {
+    const receivedKey = typeof body.integration_key === 'string' ? body.integration_key : ''
+    if (receivedKey !== secret) {
+      console.error(`[payt-webhook] integration_key inválido — IP: ${ip}`)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
+
+  // =============================================================
+  // 3. Ignorar webhooks de teste (test: true)
+  // =============================================================
+  if (body.test === true) {
+    console.log('[payt-webhook] Webhook de teste recebido — ignorando processamento')
+    return NextResponse.json({ ok: true })
+  }
 
   // =============================================================
   // 4. Verificar se o evento é de compra aprovada
+  //    Payt V1 envia status na raiz: "status": "paid"
   // =============================================================
   const status = pick(body,
     'status',
-    'transaction.status',
-    'sale.status',
-    'event',
+    'transaction.payment_status',
     'sale_status',
   )
 
@@ -120,14 +126,14 @@ export async function POST(request: Request) {
   // =============================================================
   // 6. Identificar produto
   // =============================================================
+  // Payt V1: o código do produto fica em product.code
   const offerId = pick(body,
+    'product.code',
     'product.id',
+    'offer.code',
     'offer.id',
     'offer_id',
     'product_id',
-    'sale.product.id',
-    'sale.offer.id',
-    'plan.id',
   )
 
   const offerMap = buildOfferMap()
@@ -149,13 +155,12 @@ export async function POST(request: Request) {
   // =============================================================
   // 7. Extrair transaction ID (para idempotência)
   // =============================================================
+  // Payt V1: transaction_id fica na raiz do body
   const transactionId = pick(body,
-    'transaction.id',
     'transaction_id',
+    'cart_id',
+    'transaction.id',
     'order_id',
-    'sale.id',
-    'payment_id',
-    'id',
   )
 
   // =============================================================
