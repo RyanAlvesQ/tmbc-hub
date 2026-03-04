@@ -65,9 +65,10 @@ export async function POST(request: Request) {
   // 2. Validar integration_key (Chave Única do postback na Payt)
   //    A Payt envia no body como "integration_key"
   // =============================================================
-  const secret = process.env.PAYT_WEBHOOK_SECRET
+  const secret = process.env.PAYT_WEBHOOK_SECRET?.trim()
   if (secret) {
-    const receivedKey = typeof body.integration_key === 'string' ? body.integration_key : ''
+    const receivedKey = (typeof body.integration_key === 'string' ? body.integration_key : '').trim()
+    console.log(`[payt-webhook] key check — received: "${receivedKey.slice(0, 8)}..." expected: "${secret.slice(0, 8)}..." match: ${receivedKey === secret}`)
     if (receivedKey !== secret) {
       console.error(`[payt-webhook] integration_key inválido — IP: ${ip}`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
