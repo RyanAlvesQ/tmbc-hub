@@ -253,37 +253,67 @@ export async function POST(request: Request) {
   console.log(`[payt-webhook] Acesso concedido: ${email} → ${productId}`)
 
   // =============================================================
-  // 11. Enviar email de "definir sua senha" via Supabase REST API
-  //     Chamada direta ao endpoint /auth/v1/recover SEM code_challenge
-  //     → Supabase envia link OTP (hash tokens) em vez de PKCE (?code=)
-  //     O link PKCE exige code_verifier no browser do comprador (impossível
-  //     quando o email é enviado pelo servidor do webhook).
+  // 11. Gerar link de acesso (OTP, sem PKCE) + enviar via Resend
+  //     admin.generateLink → link OTP direto do Supabase (sem code_verifier)
+  //     Resend HTTP API → entrega garantida, sem limites de rate do Supabase
   // =============================================================
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  if (!siteUrl) {
-    console.warn('[payt-webhook] NEXT_PUBLIC_SITE_URL não configurado — email de acesso não será enviado')
+  const siteUrl    = process.env.NEXT_PUBLIC_SITE_URL
+  const resendKey  = process.env.RESEND_API_KEY
+
+  if (!siteUrl || !resendKey) {
+    console.warn('[payt-webhook] NEXT_PUBLIC_SITE_URL ou RESEND_API_KEY ausente — email não enviado')
     return NextResponse.json({ ok: true })
   }
 
   try {
-    const redirectTo = `${siteUrl}/auth/callback?next=reset`
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        },
-        body: JSON.stringify({ email }),
-      }
-    )
+    // 1. Gerar link OTP de recuperação (sem PKCE — funciona em qualquer browser)
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: `${siteUrl}/auth/callback?next=reset` },
+    })
 
-    if (!res.ok) {
-      const body = await res.text()
-      console.error(`[payt-webhook] Erro ao enviar email (${res.status}): ${body}`)
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error(`[payt-webhook] Erro ao gerar link para ${email}:`, linkError?.message)
+      return NextResponse.json({ ok: true })
+    }
+
+    const actionLink = linkData.properties.action_link
+
+    // 2. Enviar email via Resend HTTP API
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'The Media Buyer Club <onboarding@resend.dev>',
+        to: [email],
+        subject: 'Seu acesso ao The Media Buyer Club está pronto',
+        html: `
+          <div style="font-family:Inter,sans-serif;background:#07040B;color:#E8E4F0;padding:40px 20px;max-width:520px;margin:0 auto;border-radius:12px;border:1px solid #2A2433;">
+            <img src="${siteUrl}/brand_assets/TMBC.png" alt="The Media Buyer Club" style="width:120px;margin-bottom:24px;display:block;" />
+            <h1 style="font-size:22px;font-weight:700;color:#7AD1B8;margin:0 0 12px;">Bem-vindo ao TMBC!</h1>
+            <p style="color:#B8B0C8;font-size:15px;line-height:1.6;margin:0 0 24px;">
+              Sua compra foi confirmada. Clique no botão abaixo para criar sua senha e acessar sua área de membros.
+            </p>
+            <a href="${actionLink}" style="display:inline-block;background:#7AD1B8;color:#04201E;font-weight:700;font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;letter-spacing:0.05em;">
+              CRIAR MINHA SENHA
+            </a>
+            <p style="color:#6B6380;font-size:12px;margin:24px 0 0;line-height:1.5;">
+              Este link é válido por 24 horas. Se não solicitou acesso, ignore este email.
+            </p>
+          </div>
+        `,
+      }),
+    })
+
+    if (!emailRes.ok) {
+      const errBody = await emailRes.text()
+      console.error(`[payt-webhook] Resend erro (${emailRes.status}): ${errBody}`)
     } else {
-      console.log(`[payt-webhook] Email de acesso enviado para ${email}`)
+      console.log(`[payt-webhook] Email de acesso enviado via Resend para ${email}`)
     }
   } catch (e) {
     console.error(`[payt-webhook] Exceção ao enviar email:`, e)
