@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
   async headers() {
     const csp = [
       "default-src 'self'",
-      // Next.js precisa de unsafe-inline (styles/scripts injetados) e unsafe-eval (HMR dev)
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Next.js precisa de unsafe-inline; unsafe-eval só em dev (HMR)
+      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' https: data: blob:",

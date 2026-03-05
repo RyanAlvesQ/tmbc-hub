@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkCsrf } from '@/lib/csrf'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -31,6 +32,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrfError = checkCsrf(request)
+  if (csrfError) return csrfError
+
   const { id } = await params
   const user = await getRequestUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -70,6 +74,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const csrfError = checkCsrf(request)
+  if (csrfError) return csrfError
+
   const { id } = await params
   const user = await getRequestUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
