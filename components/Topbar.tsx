@@ -8,6 +8,7 @@ import { CATALOG } from '@/lib/catalog'
 
 interface TopbarProps {
   alwaysScrolled?: boolean
+  leftContent?: React.ReactNode
 }
 
 const VIDEO_ICON = (
@@ -34,7 +35,7 @@ const NOTIFICATIONS = [...CATALOG].reverse().map((video, i) => ({
   icon: VIDEO_ICON,
 }))
 
-export default function Topbar({ alwaysScrolled = false }: TopbarProps) {
+export default function Topbar({ alwaysScrolled = false, leftContent }: TopbarProps) {
   const [scrolled, setScrolled] = useState(alwaysScrolled)
   const [modalOpen, setModalOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -149,9 +150,11 @@ export default function Topbar({ alwaysScrolled = false }: TopbarProps) {
     <>
       <header className={topbarClass} id="topbar">
         <div className="topbar-left">
-          <div className="topbar-greeting">
-            <span style={{ color: 'var(--text-dim)' }}>PLANO PRO</span>
-          </div>
+          {leftContent ?? (
+            <div className="topbar-greeting">
+              <span style={{ color: 'var(--text-dim)' }}>PLANO PRO</span>
+            </div>
+          )}
         </div>
 
 

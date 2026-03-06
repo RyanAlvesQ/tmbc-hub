@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
     const csp = [
       "default-src 'self'",
       // Next.js precisa de unsafe-inline; unsafe-eval só em dev (HMR)
-      `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ""}`,
+      // YouTube IFrame API precisa carregar script de https://www.youtube.com
+      `script-src 'self' 'unsafe-inline' https://www.youtube.com${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' https: data: blob:",

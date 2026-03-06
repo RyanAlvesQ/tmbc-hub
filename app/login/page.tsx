@@ -109,18 +109,22 @@ export default function LoginPage() {
     setResetLoading(true)
     setResetAlert(null)
 
-    const res = await fetch('/api/auth/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, redirectTo: window.location.origin + '/auth/callback?next=reset' }),
-    })
-    const data = await res.json()
-    setResetLoading(false)
-
-    if (!res.ok) {
-      setResetAlert({ msg: data.error ?? 'Erro ao enviar o e-mail. Tente novamente.', type: 'error' })
-    } else {
-      setResetAlert({ msg: 'Link enviado! Verifique sua caixa de entrada e a pasta de spam.', type: 'success' })
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, redirectTo: window.location.origin + '/auth/callback?next=reset' }),
+      })
+      const data = await res.json()
+      setResetLoading(false)
+      if (!res.ok) {
+        setResetAlert({ msg: data.error ?? 'Erro ao enviar o e-mail. Tente novamente.', type: 'error' })
+      } else {
+        setResetAlert({ msg: 'Link enviado! Verifique sua caixa de entrada e a pasta de spam.', type: 'success' })
+      }
+    } catch {
+      setResetLoading(false)
+      setResetAlert({ msg: 'Erro ao enviar o e-mail. Tente novamente.', type: 'error' })
     }
   }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // =============================================================
@@ -68,7 +69,10 @@ export async function POST(request: Request) {
     console.warn('[payt-webhook] PAYT_WEBHOOK_SECRET não configurado — validação de segurança desativada!')
   } else {
     const receivedKey = (typeof body.integration_key === 'string' ? body.integration_key : '').trim()
-    if (receivedKey !== secret) {
+    const secBuf = Buffer.from(secret)
+    const recBuf = Buffer.from(receivedKey)
+    const valid = recBuf.length === secBuf.length && timingSafeEqual(recBuf, secBuf)
+    if (!valid) {
       console.error(`[payt-webhook] integration_key inválido — IP: ${ip}`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

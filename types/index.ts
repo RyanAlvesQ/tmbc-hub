@@ -6,7 +6,7 @@ export interface Video {
   tag?: string
   views?: string
   level?: string
-  productId: string  // 'tmbc' | 'ese' | 'bidcap' — qual produto dá acesso a este vídeo
+  productId: 'tmbc' | 'ese' | 'bidcap'  // qual produto dá acesso a este vídeo
 }
 
 export interface WatchEntry {

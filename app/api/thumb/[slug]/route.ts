@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server'
-
-// Server-only map: slug → YouTube video ID
-const VIDEO_MAP: Record<string, string> = {
-  v1: 'x8_ZM5Ih_mg',
-  v2: 'X_Wp8CBMSWQ',
-  v3: '9aG7QDu8Z6k',
-}
+import { VIDEO_MAP } from '@/lib/server/video-map'
 
 export async function GET(
   _request: Request,

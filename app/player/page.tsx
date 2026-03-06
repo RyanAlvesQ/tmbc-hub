@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '@/components/Sidebar'
+import Topbar from '@/components/Topbar'
 import { CATALOG } from '@/lib/catalog'
 import { getFavs, setFavs, getWP, setWP, getCompleted, markCompleted } from '@/lib/storage'
 
@@ -189,8 +190,8 @@ function PlayerInner() {
       <Sidebar />
       <div className="main-wrap">
         {/* Topbar */}
-        <header className="topbar always-scrolled" style={{ background: 'rgba(7,9,15,.92)', backdropFilter: 'blur(16px)', boxShadow: '0 1px 0 rgba(71,181,255,.07)' }}>
-          <div className="topbar-left">
+        <Topbar alwaysScrolled leftContent={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Link className="back-btn" href="/">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -201,16 +202,7 @@ function PlayerInner() {
               NOVOS VÍDEOS <span style={{ color: 'var(--text-dim)' }}>›</span> <span>{meta.title}</span>
             </div>
           </div>
-          <div className="topbar-right">
-            <div className="icon-btn notif-btn">
-              <div className="notif-dot" />
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className="avatar">MBC</div>
-          </div>
-        </header>
+        } />
 
         {/* Player page */}
         <div className="player-page">

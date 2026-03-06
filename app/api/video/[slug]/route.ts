@@ -3,14 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { VIDEO_PRODUCT_MAP } from '@/lib/catalog'
-
-// Server-only map: slug → YouTube video ID
-// Nunca importar este mapeamento em client components
-const VIDEO_MAP: Record<string, string> = {
-  v1: 'x8_ZM5Ih_mg',
-  v2: 'X_Wp8CBMSWQ',
-  v3: '9aG7QDu8Z6k',
-}
+import { VIDEO_MAP } from '@/lib/server/video-map'
 
 export async function GET(
   _request: Request,

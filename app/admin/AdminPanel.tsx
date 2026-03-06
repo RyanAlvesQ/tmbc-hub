@@ -211,23 +211,25 @@ function EditModal({ user, onClose, onSaved, onProductChanged }: { user: AdminUs
 
   async function grantProduct(productId: string) {
     setProductLoading(productId)
-    await fetch(`/api/admin/users/${user.id}/products`, {
+    const res = await fetch(`/api/admin/users/${user.id}/products`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ product_id: productId }),
     })
     setProductLoading(null)
+    if (!res.ok) { setError('Erro ao conceder produto'); return }
     onProductChanged()
   }
 
   async function revokeProduct(productId: string, reason = 'revoked') {
     setProductLoading(productId)
-    await fetch(`/api/admin/users/${user.id}/products`, {
+    const res = await fetch(`/api/admin/users/${user.id}/products`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ product_id: productId, reason }),
     })
     setProductLoading(null)
+    if (!res.ok) { setError('Erro ao revogar produto'); return }
     onProductChanged()
   }
 
