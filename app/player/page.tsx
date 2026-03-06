@@ -57,8 +57,11 @@ function PlayerInner() {
     setLoading(true)
     fetch(`/api/video/${videoId}`)
       .then(r => r.json())
-      .then(data => { if (data.youtubeId) setYoutubeId(data.youtubeId) })
-      .catch(() => {})
+      .then(data => {
+        if (data.youtubeId) setYoutubeId(data.youtubeId)
+        else setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [videoId])
 
   // Sincroniza progresso do DB para localStorage ao trocar de vídeo

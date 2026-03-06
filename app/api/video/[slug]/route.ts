@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { VIDEO_PRODUCT_MAP } from '@/lib/catalog'
@@ -39,21 +40,31 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Verifica se o usuário tem acesso ativo ao produto que contém este vídeo.
-  // Graceful: se a tabela user_products ainda não existir (schema não rodado),
-  // deixa passar para não quebrar usuários existentes durante a migração.
-  const requiredProduct = VIDEO_PRODUCT_MAP[slug]
-  if (requiredProduct) {
-    const { data: access, error: accessError } = await supabase
-      .from('user_products')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('product_id', requiredProduct)
-      .eq('status', 'active')
-      .maybeSingle()
+  // Admins têm acesso a todos os vídeos
+  const adminClient = createAdminClient()
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
 
-    if (!accessError && access === null) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (profile?.role !== 'admin') {
+    // Verifica se o usuário tem acesso ativo ao produto que contém este vídeo.
+    // Graceful: se a tabela user_products ainda não existir (schema não rodado),
+    // deixa passar para não quebrar usuários existentes durante a migração.
+    const requiredProduct = VIDEO_PRODUCT_MAP[slug]
+    if (requiredProduct) {
+      const { data: access, error: accessError } = await supabase
+        .from('user_products')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('product_id', requiredProduct)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      if (!accessError && access === null) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
   }
 
