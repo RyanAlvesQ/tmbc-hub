@@ -4,71 +4,35 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getNotifRead, markAllNotifsRead } from '@/lib/storage'
+import { CATALOG } from '@/lib/catalog'
 
 interface TopbarProps {
   alwaysScrolled?: boolean
 }
 
-const NOTIFICATIONS = [
-  {
-    id: 'notif-1',
-    title: 'Nova aula disponível',
-    body: 'Como criar novos top spenders — toda semana',
-    time: 'Hoje',
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <polygon points="23 7 16 12 23 17 23 7" strokeLinejoin="round" />
-        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    id: 'notif-2',
-    title: 'Atualização semanal publicada',
-    body: 'Atualização — 30.01.26 já está disponível no hub',
-    time: 'Ontem',
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" strokeLinecap="round" strokeLinejoin="round" />
-        <polyline points="17 6 23 6 23 12" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    id: 'notif-3',
-    title: 'Novo conteúdo no hub',
-    body: 'Outros modos e otimização — assista agora',
-    time: '2 dias',
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    id: 'notif-4',
-    title: 'Conteúdo exclusivo',
-    body: 'Criativos que escalaram com menos de $500',
-    time: '3 dias',
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    id: 'notif-5',
-    title: 'Aula em destaque',
-    body: 'Estratégia de escala — novo upload disponível',
-    time: '1 semana',
-    icon: (
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinejoin="round" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-]
+const VIDEO_ICON = (
+  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
+  </svg>
+)
+
+function relativeTime(index: number): string {
+  if (index === 0) return 'Hoje'
+  if (index === 1) return 'Ontem'
+  if (index < 7)  return `${index} dias atrás`
+  return `${Math.floor(index / 7)} semana${Math.floor(index / 7) > 1 ? 's' : ''} atrás`
+}
+
+// Notificações geradas do catálogo — mais recente (último adicionado) primeiro
+const NOTIFICATIONS = [...CATALOG].reverse().map((video, i) => ({
+  id: `notif-${video.id}`,
+  title: 'Nova aula disponível',
+  body: video.title,
+  time: relativeTime(i),
+  videoId: video.id,
+  icon: VIDEO_ICON,
+}))
 
 export default function Topbar({ alwaysScrolled = false }: TopbarProps) {
   const [scrolled, setScrolled] = useState(alwaysScrolled)
@@ -222,7 +186,15 @@ export default function Topbar({ alwaysScrolled = false }: TopbarProps) {
         </div>
         <div className="notif-list">
           {NOTIFICATIONS.map(n => (
-            <div key={n.id} className={`notif-item${readIds.includes(n.id) ? '' : ' unread'}`}>
+            <div
+              key={n.id}
+              className={`notif-item${readIds.includes(n.id) ? '' : ' unread'}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setNotifOpen(false)
+                router.push(`/player?v=${n.videoId}`)
+              }}
+            >
               <div className="notif-icon-box">{n.icon}</div>
               <div className="notif-content">
                 <div className="notif-item-title">{n.title}</div>
