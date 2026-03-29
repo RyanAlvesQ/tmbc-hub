@@ -1559,7 +1559,7 @@ body::before {
   .hero-meta { gap: 12px; flex-wrap: wrap; }
   .hero-actions { flex-wrap: wrap; gap: 10px; }
   .hero-progress-wrap { display: none; }
-  .hero-decorative { display: none; }
+  .hero-decorative { display: none !important; }
 
   /* Stats strip */
   .stats-strip { margin: 0 16px 32px; flex-wrap: wrap; }

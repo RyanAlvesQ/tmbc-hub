@@ -137,7 +137,7 @@ export default function HubPage() {
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 80% at 75% 30%, #001E4D 0%, transparent 65%), radial-gradient(ellipse 45% 55% at 78% 55%, #003866 0%, transparent 55%), radial-gradient(ellipse 30% 40% at 85% 20%, rgba(0,212,200,.18) 0%, transparent 50%), radial-gradient(ellipse 60% 70% at 15% 80%, rgba(0,212,200,.06) 0%, transparent 60%), linear-gradient(145deg, #07090F 0%, #0A1428 40%, #080F1F 70%, #07090F 100%)' }} />
 
           {/* Decorative grid */}
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(71,181,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(71,181,255,.025) 1px, transparent 1px)', backgroundSize: '60px 60px', maskImage: 'radial-gradient(ellipse 80% 70% at 70% 40%, black 30%, transparent 80%)' }} />
+          <div className="hero-decorative" style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(71,181,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(71,181,255,.025) 1px, transparent 1px)', backgroundSize: '60px 60px', maskImage: 'radial-gradient(ellipse 80% 70% at 70% 40%, black 30%, transparent 80%)' }} />
 
           {/* Abstract chart bars */}
           <div className="hero-decorative" style={{ position: 'absolute', right: 120, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'flex-end', gap: 8, opacity: .18 }}>
