@@ -37,8 +37,8 @@ export default function FavoritosPage() {
         <Topbar alwaysScrolled />
 
         {/* Header */}
-        <div style={{ padding: '92px 64px 40px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div className="fav-header-wrap" style={{ padding: '92px 64px 40px' }}>
+          <div className="fav-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
               <div style={{ fontFamily: "'Roboto Mono', monospace", fontSize: 9, fontWeight: 500, letterSpacing: '.2em', color: 'var(--teal)', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ display: 'inline-block', width: 16, height: 1, background: 'var(--teal)' }} />

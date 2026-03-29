@@ -539,7 +539,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+        <div className="admin-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
           {[
             { label: 'Total de Membros', value: users.length, color: '#f0ece8' },
             { label: 'Ativos', value: totalActive, color: '#7AD1B8' },
@@ -586,7 +586,7 @@ export default function AdminPanel() {
         {/* Table */}
         <div style={{ borderRadius: 14, border: '1px solid #2A2433', overflow: 'hidden', boxShadow: '0 4px 32px rgba(0,0,0,0.4)' }}>
           {/* Table header */}
-          <div style={{
+          <div className="admin-table-header" style={{
             display: 'grid', gridTemplateColumns: '2fr 1fr 100px 1fr 1fr 80px',
             padding: '12px 20px', background: 'rgba(255,255,255,0.02)',
             borderBottom: '1px solid #2A2433',
@@ -606,6 +606,7 @@ export default function AdminPanel() {
             filtered.map((u, i) => (
               <div
                 key={u.id}
+                className="admin-table-row"
                 style={{
                   display: 'grid', gridTemplateColumns: '2fr 1fr 100px 1fr 1fr 80px',
                   padding: '14px 20px', alignItems: 'center',

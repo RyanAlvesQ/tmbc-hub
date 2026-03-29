@@ -150,6 +150,15 @@ export default function Topbar({ alwaysScrolled = false, leftContent }: TopbarPr
     <>
       <header className={topbarClass} id="topbar">
         <div className="topbar-left">
+          <button
+            className="mobile-menu-btn"
+            onClick={() => window.dispatchEvent(new Event('toggle-sidebar'))}
+            aria-label="Menu"
+          >
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" />
+            </svg>
+          </button>
           {leftContent ?? (
             <div className="topbar-greeting">
               <span style={{ color: 'var(--text-dim)' }}>PLANO PRO</span>

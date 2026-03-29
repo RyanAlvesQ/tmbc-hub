@@ -1464,3 +1464,249 @@ body::before {
   color: var(--text-dim);
   letter-spacing: .04em;
 }
+
+/* ── Mobile hamburger toggle ─────────────────── */
+.mobile-menu-btn {
+  display: none;
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 200ms, color 200ms;
+  flex-shrink: 0;
+}
+.mobile-menu-btn:hover { background: rgba(42,36,51,1); color: var(--teal); }
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(7,4,11,.7);
+  z-index: 99;
+  backdrop-filter: blur(4px);
+}
+.sidebar-overlay.open { display: block; }
+
+/* ── Meus Cursos grid (targetable by media query) */
+.cursos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 450px));
+  gap: 16px;
+  padding: 0 64px;
+}
+
+/* ═══════════════════════════════════════════════ */
+/* ── RESPONSIVE: Tablet (≤ 1024px) ───────────── */
+/* ═══════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .hero { height: 70vh; min-height: 420px; }
+  .hero-content { padding: 0 40px 60px; }
+  .hero-progress-wrap { right: 40px; }
+  .stats-strip { margin: 0 40px 36px; }
+  .row-header { padding: 0 40px; }
+  .cards-scroll { padding: 4px 40px 16px; scroll-padding: 40px; }
+  .cat-chips { padding: 0 40px 32px; }
+  .section-divider { margin: 0 40px 36px; }
+  .instructor-strip { margin: 0 40px 36px; }
+  .fav-grid { padding: 0 40px 60px; }
+
+  .cursos-grid { padding: 0 40px; }
+
+  .player-main { grid-template-columns: 1fr 280px; }
+  .video-col { padding: 24px 20px 32px 28px; }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* ── RESPONSIVE: Mobile (≤ 768px) ────────────── */
+/* ═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-w: 0px;
+  }
+
+  /* Sidebar: hidden by default, slides in when open */
+  .sidebar {
+    width: 220px;
+    transform: translateX(-100%);
+    transition: transform 300ms cubic-bezier(.4,0,.2,1);
+    z-index: 200;
+  }
+  .sidebar:hover { width: 220px; }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 40px rgba(0,0,0,.6);
+  }
+  .sidebar.open .nav-label,
+  .sidebar.open .sidebar-logo-text { opacity: 1; }
+
+  /* Hamburger visible */
+  .mobile-menu-btn { display: flex; }
+
+  /* Topbar: full-width, reduce padding */
+  .topbar { left: 0; padding: 0 16px; }
+
+  /* Search: hide on mobile, show with icon tap */
+  .search-wrap { display: none; }
+
+  /* Hero */
+  .hero { height: 60vh; min-height: 380px; }
+  .hero-content { padding: 0 20px 48px; }
+  .hero-title { font-size: clamp(26px, 7vw, 40px); max-width: 100%; }
+  .hero-desc { font-size: 13px; max-width: 100%; margin-bottom: 24px; }
+  .hero-meta { gap: 12px; flex-wrap: wrap; }
+  .hero-actions { flex-wrap: wrap; gap: 10px; }
+  .hero-progress-wrap { display: none; }
+  .hero-decorative { display: none; }
+
+  /* Stats strip */
+  .stats-strip { margin: 0 16px 32px; flex-wrap: wrap; }
+  .stat-item { flex: 1 1 calc(50% - 1px); min-width: 0; padding: 14px 16px; }
+  .stat-item::after { display: none; }
+  .stat-value { font-size: 18px; }
+
+  /* Content rows */
+  .row-header { padding: 0 16px; }
+  .cards-scroll { padding: 4px 16px 16px; scroll-padding: 16px; gap: 12px; }
+  .cat-chips { padding: 0 16px 24px; }
+  .section-divider { margin: 0 16px 32px; }
+
+  /* Video cards: smaller on mobile */
+  .vcard { width: 220px; }
+  .vcard-wide { width: 260px; }
+  .featured-card { width: 320px; }
+
+  /* Meus Cursos: 2 columns on tablet */
+  .cursos-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  /* Instructor strip */
+  .instructor-strip {
+    margin: 0 16px 32px;
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+    gap: 16px;
+  }
+  .instructor-stats { gap: 20px; }
+
+  /* Player page: single column */
+  .player-main {
+    grid-template-columns: 1fr;
+  }
+  .video-col { padding: 16px 16px 24px; }
+  .video-title { font-size: 18px; }
+  .video-meta-row { gap: 12px; flex-wrap: wrap; }
+  .video-actions { flex-wrap: wrap; gap: 8px; }
+  .action-btn { padding: 10px 14px; min-height: 44px; }
+
+  .playlist-col {
+    border-left: none;
+    border-top: 1px solid rgba(42,36,51,.75);
+    max-height: 400px;
+  }
+
+  /* Favorites grid */
+  .fav-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    padding: 0 16px 48px;
+    gap: 12px;
+  }
+
+  /* Modals & panels */
+  .user-modal {
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-width: 320px;
+    margin-left: auto;
+  }
+  .notif-panel {
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-width: 360px;
+    margin-left: auto;
+  }
+
+  /* Login page */
+  .card-body { padding: 28px 24px 24px; }
+
+  /* Touch targets: min 44px */
+  .icon-btn { width: 44px; height: 44px; }
+  .avatar { width: 40px; height: 40px; }
+
+  /* Topbar breadcrumb truncation */
+  .topbar-breadcrumb {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Back button */
+  .back-btn { padding: 8px 12px; min-height: 44px; }
+
+  /* Scroll arrows: always hidden on mobile (swipe instead) */
+  .scroll-arrow { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════════ */
+/* ── RESPONSIVE: Small phones (≤ 480px) ──────── */
+/* ═══════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .hero { height: 55vh; min-height: 320px; }
+  .hero-content { padding: 0 16px 36px; }
+  .hero-title { font-size: clamp(22px, 7vw, 32px); }
+  .hero-desc { font-size: 12px; }
+  .hero-badge { font-size: 9px; padding: 4px 10px; }
+  .btn-primary { padding: 12px 20px; font-size: 11px; }
+  .btn-secondary { padding: 12px 20px; font-size: 11px; }
+
+  /* Stats strip: single column */
+  .stat-item { flex: 1 1 100%; }
+
+  /* Cards */
+  .vcard { width: 200px; }
+  .vcard-wide { width: 240px; }
+  .featured-card { width: 280px; }
+
+  /* Meus Cursos: single column */
+  .cursos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Login */
+  .card-body { padding: 24px 20px 20px; }
+  .card-title { font-size: 20px; }
+
+  /* Favorites */
+  .fav-grid { grid-template-columns: 1fr; }
+
+  /* Player */
+  .video-title { font-size: 16px; }
+  .video-wrapper { border-radius: 8px; }
+
+  /* Topbar */
+  .topbar-breadcrumb { max-width: 140px; font-size: 10px; }
+  .topbar-greeting { font-size: 10px; }
+
+  /* Admin panel */
+  .admin-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .admin-table-header { display: none !important; }
+  .admin-table-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 16px !important;
+    border-bottom: 1px solid rgba(42,36,51,.6);
+  }
+
+  /* Favoritos header */
+  .fav-header-wrap { padding: 80px 16px 24px !important; }
+  .fav-header { flex-direction: column; gap: 16px; }
+}

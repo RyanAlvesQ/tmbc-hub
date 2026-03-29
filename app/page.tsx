@@ -140,14 +140,14 @@ export default function HubPage() {
           <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(71,181,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(71,181,255,.025) 1px, transparent 1px)', backgroundSize: '60px 60px', maskImage: 'radial-gradient(ellipse 80% 70% at 70% 40%, black 30%, transparent 80%)' }} />
 
           {/* Abstract chart bars */}
-          <div style={{ position: 'absolute', right: 120, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'flex-end', gap: 8, opacity: .18 }}>
+          <div className="hero-decorative" style={{ position: 'absolute', right: 120, top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'flex-end', gap: 8, opacity: .18 }}>
             {[180, 240, 120, 290, 200, 160, 310, 250, 140].map((h, i) => (
               <div key={i} style={{ width: 14, height: h, background: `linear-gradient(180deg,${['var(--blue)', 'var(--teal)', 'var(--blue)', 'var(--teal)', 'var(--blue)', 'var(--orange)', 'var(--teal)', 'var(--blue)', 'var(--orange)'][i]},transparent)`, borderRadius: '3px 3px 0 0' }} />
             ))}
           </div>
 
           {/* Floating metrics */}
-          <div style={{ position: 'absolute', right: 80, top: '50%', transform: 'translateY(-60%)', display: 'flex', flexDirection: 'column', gap: 14, opacity: .85 }}>
+          <div className="hero-decorative" style={{ position: 'absolute', right: 80, top: '50%', transform: 'translateY(-60%)', display: 'flex', flexDirection: 'column', gap: 14, opacity: .85 }}>
             <div style={{ background: 'rgba(11,17,34,.85)', border: '1px solid rgba(0,212,200,.15)', borderRadius: 10, padding: '16px 20px', backdropFilter: 'blur(12px)', minWidth: 200 }}>
               <div style={{ fontFamily: "'Roboto Mono', monospace", fontSize: 9, letterSpacing: '.14em', color: 'var(--teal)', marginBottom: 8 }}>ROAS ATUAL</div>
               <div style={{ fontFamily: "'Roboto Mono', monospace", fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>4.7<span style={{ fontSize: 14, color: 'var(--text-muted)', marginLeft: 2 }}>x</span></div>
@@ -281,7 +281,7 @@ export default function HubPage() {
                 <span className="row-tag" style={{ background: 'rgba(0,212,200,.1)', color: 'var(--teal)', border: '1px solid rgba(0,212,200,.2)' }}>3 CURSOS</span>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 450px))', gap: 16, padding: '0 64px' }}>
+            <div className="cursos-grid">
               {PRODUCT_CATALOG.map(product => {
                 const videos = CATALOG.filter(v => v.productId === product.id)
                 const previewVideo = videos[0] ?? null

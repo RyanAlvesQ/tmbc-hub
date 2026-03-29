@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function Sidebar() {
   const pathname = usePathname()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -22,51 +23,71 @@ export default function Sidebar() {
     }).catch(() => {})
   }, [])
 
+  // Listen for toggle event from Topbar hamburger
+  useEffect(() => {
+    const handler = () => setMobileOpen(o => !o)
+    window.addEventListener('toggle-sidebar', handler)
+    return () => window.removeEventListener('toggle-sidebar', handler)
+  }, [])
+
+  // Close sidebar on route change
+  useEffect(() => { setMobileOpen(false) }, [pathname])
+
+  const close = () => setMobileOpen(false)
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand_assets/TMBC.png" alt="TMBC Logo" />
-        <div className="sidebar-logo-text">THE MEDIA<br />BUYER CLUB</div>
-      </div>
+    <>
+      {/* Overlay behind sidebar on mobile */}
+      <div
+        className={`sidebar-overlay${mobileOpen ? ' open' : ''}`}
+        onClick={close}
+      />
 
-      <nav className="nav-section">
-        <Link className={`nav-item${pathname === '/' ? ' active' : ''}`} href="/">
-          <span className="nav-icon">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-              <rect x="2" y="2" width="9" height="9" rx="2" fill="currentColor" opacity=".7" />
-              <rect x="13" y="2" width="9" height="9" rx="2" fill="currentColor" />
-              <rect x="2" y="13" width="9" height="9" rx="2" fill="currentColor" opacity=".4" />
-              <rect x="13" y="13" width="9" height="9" rx="2" fill="currentColor" opacity=".7" />
-            </svg>
-          </span>
-          <span className="nav-label">HUB DE VÍDEOS</span>
-        </Link>
+      <aside className={`sidebar${mobileOpen ? ' open' : ''}`}>
+        <div className="sidebar-logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand_assets/TMBC.png" alt="TMBC Logo" />
+          <div className="sidebar-logo-text">THE MEDIA<br />BUYER CLUB</div>
+        </div>
 
-        <Link className={`nav-item${pathname === '/favoritos' ? ' active' : ''}`} href="/favoritos">
-          <span className="nav-icon">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-              <path d="M12 21l-7.5-7.2A5 5 0 0 1 12 6.5a5 5 0 0 1 7.5 7.3L12 21z" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="nav-label">FAVORITOS</span>
-        </Link>
-
-        {isAdmin && (
-          <Link className={`nav-item${pathname === '/admin' ? ' active' : ''}`} href="/admin">
+        <nav className="nav-section">
+          <Link className={`nav-item${pathname === '/' ? ' active' : ''}`} href="/" onClick={close}>
             <span className="nav-icon">
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                <rect x="2" y="2" width="9" height="9" rx="2" fill="currentColor" opacity=".7" />
+                <rect x="13" y="2" width="9" height="9" rx="2" fill="currentColor" />
+                <rect x="2" y="13" width="9" height="9" rx="2" fill="currentColor" opacity=".4" />
+                <rect x="13" y="13" width="9" height="9" rx="2" fill="currentColor" opacity=".7" />
               </svg>
             </span>
-            <span className="nav-label">ADMIN</span>
+            <span className="nav-label">HUB DE VÍDEOS</span>
           </Link>
-        )}
-      </nav>
 
-      <div className="sidebar-bottom" />
-    </aside>
+          <Link className={`nav-item${pathname === '/favoritos' ? ' active' : ''}`} href="/favoritos" onClick={close}>
+            <span className="nav-icon">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                <path d="M12 21l-7.5-7.2A5 5 0 0 1 12 6.5a5 5 0 0 1 7.5 7.3L12 21z" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="nav-label">FAVORITOS</span>
+          </Link>
+
+          {isAdmin && (
+            <Link className={`nav-item${pathname === '/admin' ? ' active' : ''}`} href="/admin" onClick={close}>
+              <span className="nav-icon">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="nav-label">ADMIN</span>
+            </Link>
+          )}
+        </nav>
+
+        <div className="sidebar-bottom" />
+      </aside>
+    </>
   )
 }
