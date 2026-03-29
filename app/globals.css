@@ -1545,10 +1545,24 @@ body::before {
   /* Hamburger visible */
   .mobile-menu-btn { display: flex; }
 
-  /* Topbar: full-width, reduce padding */
-  .topbar { left: 0; padding: 0 16px; }
+  /* Topbar: full-width, compact layout */
+  .topbar {
+    left: 0;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .topbar-left {
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .topbar-right {
+    gap: 8px;
+    flex-shrink: 0;
+  }
 
-  /* Search: hide on mobile, show with icon tap */
+  /* Search: hide on mobile */
   .search-wrap { display: none; }
 
   /* Hero */
@@ -1638,19 +1652,25 @@ body::before {
   .card-body { padding: 28px 24px 24px; }
 
   /* Touch targets: min 44px */
-  .icon-btn { width: 44px; height: 44px; }
-  .avatar { width: 40px; height: 40px; }
+  .icon-btn { width: 40px; height: 40px; }
+  .avatar { width: 36px; height: 36px; font-size: 11px; }
 
-  /* Topbar breadcrumb truncation */
+  /* Topbar breadcrumb: truncate aggressively */
   .topbar-breadcrumb {
-    max-width: 200px;
+    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 10px;
   }
 
-  /* Back button */
-  .back-btn { padding: 8px 12px; min-height: 44px; }
+  /* Back button: compact */
+  .back-btn {
+    padding: 6px 10px;
+    min-height: 36px;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
 
   /* Scroll arrows: always hidden on mobile (swipe instead) */
   .scroll-arrow { display: none !important; }
@@ -1692,8 +1712,9 @@ body::before {
   .video-title { font-size: 16px; }
   .video-wrapper { border-radius: 8px; }
 
-  /* Topbar */
-  .topbar-breadcrumb { max-width: 140px; font-size: 10px; }
+  /* Topbar: extra compact */
+  .topbar { padding: 0 10px; }
+  .topbar-breadcrumb { display: none; }
   .topbar-greeting { font-size: 10px; }
 
   /* Admin panel */

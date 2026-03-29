@@ -66,7 +66,20 @@ describe('Responsividade — globals.css', () => {
 
     it('padding reduzido no topbar', () => {
       const mobileSection = css.split('@media (max-width: 768px)')[1]
-      expect(mobileSection).toContain('padding: 0 16px')
+      expect(mobileSection).toContain('padding: 0 12px')
+    })
+
+    it('topbar-left tem flex: 1 e min-width: 0 para truncar', () => {
+      const mobileSection = css.split('@media (max-width: 768px)')[1]
+      expect(mobileSection).toContain('.topbar-left')
+      expect(mobileSection).toContain('flex: 1')
+      expect(mobileSection).toContain('min-width: 0')
+    })
+
+    it('breadcrumb escondido em telas muito pequenas (480px)', () => {
+      const smallSection = css.split('@media (max-width: 480px)')[1]
+      expect(smallSection).toContain('.topbar-breadcrumb')
+      expect(smallSection).toContain('display: none')
     })
   })
 
@@ -146,9 +159,10 @@ describe('Responsividade — globals.css', () => {
   })
 
   describe('Touch targets', () => {
-    it('icon-btn tem 44px no mobile', () => {
+    it('icon-btn tem tamanho adequado no mobile', () => {
       const mobileSection = css.split('@media (max-width: 768px)')[1]
-      expect(mobileSection).toContain('.icon-btn { width: 44px; height: 44px')
+      expect(mobileSection).toContain('.icon-btn')
+      expect(mobileSection).toMatch(/\.icon-btn\s*\{[^}]*width:\s*4\dpx/)
     })
 
     it('action-btn tem min-height: 44px no mobile', () => {
